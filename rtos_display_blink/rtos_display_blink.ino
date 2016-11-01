@@ -156,11 +156,11 @@ void cube(float *px, float *py, float *pz, float *p2x, float *p2y, int *r, uint1
 
 static void vSqrtTask(void *pvParameters) {
   while (1){
-  //tft.setTextColor(BLACK);  
-  //tft.drawString("Start",1,20,7); 
-  tft.fillRect(20, 20, 200, 32, WHITE); 
-  //tft.setTextColor(BLACK);  
-  tft.drawString("Calculating...",20,20,4);
+  if ( xSemaphoreTake( xDisplayFree, ( portTickType ) 10 ) == pdTRUE ) {  
+    tft.fillRect(20, 20, 200, 32, WHITE); 
+    tft.drawString("Calculating...",20,20,4);
+    xSemaphoreGive( xDisplayFree );
+  }
   Serial.println ("Starting Sqrt calculations...");
   uint16 x = 0;
   uint16 ixx[1001];
@@ -174,12 +174,15 @@ static void vSqrtTask(void *pvParameters) {
   uint32_t t1 = millis() - t0;
   Serial.print ("Sqrt calculations took (ms): ");
   Serial.println (t1);
-  tft.fillRect(20, 20, 200, 32, WHITE); 
-  //tft.setTextColor(BLACK);  
-  tft.drawString("Ready",20,20,4);
-  
+  if ( xSemaphoreTake( xDisplayFree, ( portTickType ) 10 ) == pdTRUE ) {  
+    tft.fillRect(20, 20, 200, 32, WHITE); 
+    tft.drawString("Ready",20,20,4);
+    xSemaphoreGive( xDisplayFree );
+  }
   //delay (5000);
   vTaskDelay(5000);
+
+  
   }
 }
 
