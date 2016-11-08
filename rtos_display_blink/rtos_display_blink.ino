@@ -4,6 +4,8 @@
 #include <Adafruit_GFX_AS.h>    // Core graphics library, with extra fonts.
 #include <Adafruit_ILI9341_STM.h> // STM32 DMA Hardware-specific library
 
+//#include <stdlib.h>
+
 #define BOARD_LED_PIN PC13
 
 #define cs   PA3
@@ -14,7 +16,9 @@
 #define BLACK 0x0000
 #define RED 0xF800
 
-
+void itoa(int n, char s[]);
+void ltoa(int32_t n, char s[]);
+ 
 //TFT_ILI9163C tft = TFT_ILI9163C(__CS, __DC, __RST);
 Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(cs, dc, rst);       // Invoke custom library
 
@@ -163,9 +167,10 @@ static void vSqrtTask(void *pvParameters) {
   }
   Serial.println ("Starting Sqrt calculations...");
   uint16 x = 0;
-  uint16 ixx[1001];
+  //uint16 ixx[1001];
   // Library Sqrt
-  uint32_t t0 = millis();/*
+  uint32_t t0 = millis();
+  /*
   for (uint32_t n = 247583650 ; n > 247400000 ; n--) {
     x = sqrt (n);
   }
@@ -174,9 +179,14 @@ static void vSqrtTask(void *pvParameters) {
   uint32_t t1 = millis() - t0;
   Serial.print ("Sqrt calculations took (ms): ");
   Serial.println (t1);
+
+  char buf[16];
+  ltoa(t1, buf);
+    
   if ( xSemaphoreTake( xDisplayFree, ( portTickType ) 10 ) == pdTRUE ) {  
     tft.fillRect(20, 20, 200, 32, WHITE); 
-    tft.drawString("Ready",20,20,4);
+    //tft.drawString("Ready",20,20,4);
+    tft.drawString(buf,20,20,4);
     xSemaphoreGive( xDisplayFree );
   }
   //delay (5000);
@@ -237,4 +247,52 @@ void loop() {
   // Do not write any code here, it would not execute.
 }
 
+
+/* reverse:  reverse string s in place */
+ void reverse(char s[])
+ {
+     int i, j;
+     char c;
+
+     for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+         c = s[i];
+         s[i] = s[j];
+         s[j] = c;
+     }
+}  
+
+/* itoa:  convert n to characters in s */
+ void itoa(int n, char s[])
+ {
+     int i, sign;
+
+     if ((sign = n) < 0)  /* record sign */
+         n = -n;          /* make n positive */
+     i = 0;
+     do {       /* generate digits in reverse order */
+         s[i++] = n % 10 + '0';   /* get next digit */
+     } while ((n /= 10) > 0);     /* delete it */
+     if (sign < 0)
+         s[i++] = '-';
+     s[i] = '\0';
+     reverse(s);
+}  
+
+
+/* itoa:  convert n to characters in s */
+ void ltoa(int32_t n, char s[])
+ {
+     int32_t i, sign;
+
+     if ((sign = n) < 0)  /* record sign */
+         n = -n;          /* make n positive */
+     i = 0;
+     do {       /* generate digits in reverse order */
+         s[i++] = n % 10 + '0';   /* get next digit */
+     } while ((n /= 10) > 0);     /* delete it */
+     if (sign < 0)
+         s[i++] = '-';
+     s[i] = '\0';
+     reverse(s);
+}  
 
