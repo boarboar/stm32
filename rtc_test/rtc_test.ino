@@ -50,10 +50,10 @@ void setup()
   digitalWrite(LED, LOW);
 
   tft.begin();
-  tft.fillScreen(ILI9341_WHITE);
-  tft.setTextColor(ILI9341_BLACK);  
-  tft.setTextSize(1);
-  tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+  tft.fillScreen(ILI9341_BLACK);
+  //tft.setTextColor(ILI9341_BLACK);  
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
   //tft.drawString("Starting...",20,20,4);
   
   /*
@@ -166,10 +166,16 @@ void RTCdisplay()
 void printDigits(int digits)
 {
   // Print two digits preceding colon and leading 0
+  /*
   Serial.print(":");
   if(digits < 10)
     Serial.print('0');
   Serial.print(digits);
+  */
+  tft.print(":");
+  if(digits < 10)
+    tft.print('0');
+  tft.print(digits);
 }
 
 /*============================================================================*/  
