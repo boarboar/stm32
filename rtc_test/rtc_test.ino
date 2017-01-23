@@ -8,6 +8,15 @@
  
 
 #include <RTClock.h> 
+#include <SPI.h>
+#include <Adafruit_GFX_AS.h>    // Core graphics library, with extra fonts.
+#include <Adafruit_ILI9341_STM.h> // STM32 DMA Hardware-specific library
+
+#define cs   PA3
+#define dc   PA1
+#define rst  PA2
+
+Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(cs, dc, rst);       // Invoke custom library
 
 #define LED PC13
 
@@ -39,7 +48,15 @@ void setup()
   digitalWrite(LED, HIGH);
   delay(6000);
   digitalWrite(LED, LOW);
+
+  tft.begin();
+  tft.fillScreen(ILI9341_WHITE);
+  tft.setTextColor(ILI9341_BLACK);  
+  tft.setTextSize(1);
+  tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+  //tft.drawString("Starting...",20,20,4);
   
+  /*
   Serial.print("Compilation Date/Time: ");
   Serial.print(compTime);
   Serial.print(" ");
@@ -47,6 +64,12 @@ void setup()
   
   Serial.print("RTC Counter (unix time): ");
   Serial.println(rt.getTime());
+  */
+
+  tft.println("Compilation Date/Time: ");
+  tft.print(compTime);
+  tft.print(" ");
+  tft.println(compDate);
   
   RTCdisplay(); // Display RTC date/time
 
@@ -69,14 +92,23 @@ void setup()
   dateTime.Year = compDate.substring(7,11).toInt() - 1970;
   dateTime_t = makeTime(dateTime);    // Store compilation time in "unix" format
 
+  delay(5000);
+  
   // Set RTC at compilation time if needed
   if (dateTime_t > (uint32_t)rt.getTime())      // Compilation time > RTC time?
   // Yes. Set RCT time from compilation time
   {
+    /*
     Serial.println();
     Serial.println("RTC Set to compilation Date/Time");
     rt.setTime(dateTime_t);
+    */
+
     
+    tft.println("RTC Set to compilation Date/Time");
+    rt.setTime(dateTime_t);
+    
+    /*
     Serial.print("New RTC Date/Time: ");
     Serial.print(dateTime.Hour);
     Serial.print(":");
@@ -90,6 +122,7 @@ void setup()
     Serial.print("-");
     Serial.println(dateTime.Year + 1970);
     Serial.println();
+    */
   }
 }
 
@@ -103,6 +136,7 @@ void loop()
 void RTCdisplay()
 {
   // Display RCT time
+  /*
   Serial.print("RTC Date/Time:    ");
   breakTime(rt.getTime(), dateTime);
   Serial.print(dateTime.Hour);
@@ -114,6 +148,19 @@ void RTCdisplay()
   Serial.print(dateTime.Month);
   Serial.print("-");
   Serial.println(dateTime.Year+1970);
+  */
+
+  tft.println("RTC Date/Time:    ");
+  breakTime(rt.getTime(), dateTime);
+  tft.print(dateTime.Hour);
+  printDigits(dateTime.Minute);
+  printDigits(dateTime.Second);
+  tft.print(" ");
+  tft.print(dateTime.Day);
+  tft.print("-");
+  tft.print(dateTime.Month);
+  tft.print("-");
+  tft.println(dateTime.Year+1970);
 }
 
 void printDigits(int digits)
