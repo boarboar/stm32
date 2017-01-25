@@ -178,8 +178,8 @@ void RTCdisplay()
   printDigits(bptr, dateTime.Month, 2);
   bptr+=2;
   *bptr++='/';
-  printDigits(bptr, dateTime.Year, 4);
-  tft.drawString(buf, 20, 220, 2);
+  printDigits(bptr, dateTime.Year+1970, 4);
+  tft.drawString(buf, 20, 260, 2);
   /*
   tft.print(dateTime.Hour);
   printDigits(dateTime.Minute);
