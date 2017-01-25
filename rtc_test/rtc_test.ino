@@ -46,7 +46,7 @@ void setup()
 
   // Some delay waiting serial ready
   digitalWrite(LED, HIGH);
-  delay(6000);
+  delay(2000);
   digitalWrite(LED, LOW);
 
   tft.begin();
@@ -124,6 +124,10 @@ void setup()
     Serial.println();
     */
   }
+  else
+  {
+    tft.println("RTC OK");
+  }
 }
 
 void loop()
@@ -150,8 +154,33 @@ void RTCdisplay()
   Serial.println(dateTime.Year+1970);
   */
 
-  tft.println("RTC Date/Time:    ");
+  //tft.println("RTC Date/Time:    ");
+
+  tft.fillRect(20, 200, 200, 32, ILI9341_BLACK); 
+  char buf[24];
+  char *bptr=buf;
+  
   breakTime(rt.getTime(), dateTime);
+  printDigits(bptr, dateTime.Hour, 2);
+  bptr+=2;
+  *bptr++=':';
+  printDigits(bptr, dateTime.Minute, 2);
+  bptr+=2;
+  *bptr++=':';
+  printDigits(bptr, dateTime.Second, 2);
+  
+  
+  bptr=buf;
+  tft.drawString(buf, 20, 200, 4);
+  printDigits(bptr, dateTime.Day, 2);
+  bptr+=2;
+  *bptr++='/';
+  printDigits(bptr, dateTime.Month, 2);
+  bptr+=2;
+  *bptr++='/';
+  printDigits(bptr, dateTime.Year, 4);
+  tft.drawString(buf, 20, 220, 2);
+  /*
   tft.print(dateTime.Hour);
   printDigits(dateTime.Minute);
   printDigits(dateTime.Second);
@@ -161,6 +190,20 @@ void RTCdisplay()
   tft.print(dateTime.Month);
   tft.print("-");
   tft.println(dateTime.Year+1970);
+  */
+}
+
+void printDigits(char *buf, uint16_t t, uint16_t ndig) 
+{
+  char tmp[8];
+  int8_t shift;
+  uint8_t i;
+  itoa(t, tmp);
+  shift=ndig-strlen(tmp);
+  if(shift<0) return;
+  
+  for(i=0; i<shift; i++) buf[i]='0';
+  strcpy(buf+i, tmp);
 }
 
 void printDigits(int digits)
@@ -271,4 +314,53 @@ uint32_t makeTime(struct TimeElements &tm){
   seconds+= tm.Second;
   return (uint32_t)seconds; 
 }
+
+
+/* reverse:  reverse string s in place */
+ void reverse(char s[])
+ {
+     int i, j;
+     char c;
+
+     for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+         c = s[i];
+         s[i] = s[j];
+         s[j] = c;
+     }
+}  
+
+/* itoa:  convert n to characters in s */
+ void itoa(int n, char s[])
+ {
+     int i, sign;
+
+     if ((sign = n) < 0)  /* record sign */
+         n = -n;          /* make n positive */
+     i = 0;
+     do {       /* generate digits in reverse order */
+         s[i++] = n % 10 + '0';   /* get next digit */
+     } while ((n /= 10) > 0);     /* delete it */
+     if (sign < 0)
+         s[i++] = '-';
+     s[i] = '\0';
+     reverse(s);
+}  
+
+
+/* itoa:  convert n to characters in s */
+ void ltoa(int32_t n, char s[])
+ {
+     int32_t i, sign;
+
+     if ((sign = n) < 0)  /* record sign */
+         n = -n;          /* make n positive */
+     i = 0;
+     do {       /* generate digits in reverse order */
+         s[i++] = n % 10 + '0';   /* get next digit */
+     } while ((n /= 10) > 0);     /* delete it */
+     if (sign < 0)
+         s[i++] = '-';
+     s[i] = '\0';
+     reverse(s);
+}  
 
