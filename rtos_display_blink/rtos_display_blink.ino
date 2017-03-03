@@ -8,6 +8,10 @@
 
 #define BOARD_LED_PIN PC13
 
+// need FT ports!
+#define US_IN PB10
+#define US_OUT  PB11 
+
 #define cs   PA3
 #define dc   PA1
 #define rst  PA2
@@ -196,12 +200,57 @@ static void vSqrtTask(void *pvParameters) {
   }
 }
 
+static void vUltraSensTask(void *pvParameters) {
+  while (1){
+  if ( xSemaphoreTake( xDisplayFree, ( portTickType ) 10 ) == pdTRUE ) {  
+    tft.fillRect(20, 20, 200, 32, WHITE); 
+    tft.drawString("Measuring...",20,20,4);
+    xSemaphoreGive( xDisplayFree );
+  }
+  Serial.println ("Starting measurement...");
+  uint32_t t0 = millis();  
+  
+  digitalWrite(US_OUT, LOW);
+  delayMicroseconds(2);
+  digitalWrite(US_OUT, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(US_OUT, LOW);
+  uint32_t d=pulseIn(US_IN, HIGH, 50000);
+  int16_t dist=(int16_t)(d/58);
+  
+  uint32_t t1 = millis() - t0;
+  Serial.print ("Sqrt calculations took (ms): ");
+  Serial.print(t1);
+  Serial.print("  Dist: ");
+  Serial.println(dist);
+
+  
+  char buf[16];
+  itoa(dist, buf);
+
+    
+  if ( xSemaphoreTake( xDisplayFree, ( portTickType ) 10 ) == pdTRUE ) {  
+    tft.fillRect(20, 20, 200, 32, WHITE); 
+    //tft.drawString("Ready",20,20,4);
+    tft.drawString(buf,20,20,4);
+    xSemaphoreGive( xDisplayFree );
+  }
+  vTaskDelay(5000);
+
+  
+  }
+}
+
 void setup() {
   // initialize the digital pin as an output:
   Serial.begin(9600);
   delay (2000);
   Serial.println ("Running...");
   pinMode(BOARD_LED_PIN, OUTPUT);
+
+  pinMode(US_OUT, OUTPUT);     
+  pinMode(US_IN, INPUT);       
+  
   tft.begin();
   tft.fillScreen(WHITE);
   tft.setTextColor(BLACK);  
@@ -234,8 +283,9 @@ void setup() {
               NULL,
               tskIDLE_PRIORITY+1,
               NULL);
-  xTaskCreate(vSqrtTask,
-              "Sqrt",
+  //
+  xTaskCreate(vUltraSensTask,
+              "US",
               configMINIMAL_STACK_SIZE,
               NULL,
               tskIDLE_PRIORITY,
