@@ -9,8 +9,8 @@
 #define BOARD_LED_PIN PC13
 
 // need FT ports!
-#define US_IN PB10
-#define US_OUT  PB11 
+#define US_IN PB13
+#define US_OUT  PB12
 
 #define cs   PA3
 #define dc   PA1
@@ -235,7 +235,7 @@ static void vUltraSensTask(void *pvParameters) {
     tft.drawString(buf,20,20,4);
     xSemaphoreGive( xDisplayFree );
   }
-  vTaskDelay(5000);
+  vTaskDelay(500);
 
   
   }
