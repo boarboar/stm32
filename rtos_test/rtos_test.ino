@@ -19,7 +19,7 @@ static void vSerialOutTask(void *pvParameters) {
       if( xQueueReceive( xQueue, &rxMessage, ( TickType_t ) 10 ) )
         {
          digitalWrite(BOARD_LED_PIN, HIGH);
-         Serial.print(rxMessage.ucMessageID);
+         Serial.print((int)rxMessage.ucMessageID);
          Serial.print(" : ");
          Serial.println(rxMessage.ucData);
          vTaskDelay(100);
@@ -41,7 +41,8 @@ void setup() {
     // initialize the digital pin as an output:
     delay(1000);
     pinMode(BOARD_LED_PIN, OUTPUT);
-    Serial.begin(9600); // ???
+    Serial.begin(115200); 
+    Serial3.begin(115200); 
 
     xQueue = xQueueCreate( 10, sizeof( struct AMessage ) );
 
