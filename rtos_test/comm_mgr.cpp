@@ -19,7 +19,9 @@ boolean CommManager::ReadSerialCommand()
     {
       if (bytes > 0) { 
         buf[bytes]=0; 
-        Serial3.println("CMDOK");
+        Serial3.print("CMDOK[ ");
+        Serial3.print(buf);
+        Serial3.print(" ]");
         return true; 
       } 
       return false; // skip 10 or 13 left         
@@ -39,6 +41,7 @@ void CommManager::ReadBuffer(char *pcBuf, uint16_t uLen) {
     uint16_t len=bytes;
     if(uLen<bytes) len=uLen;
     strncpy(pcBuf, buf, len);
+    bytes=0;
   }
 }
 

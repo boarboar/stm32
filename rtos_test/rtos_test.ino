@@ -4,6 +4,17 @@
 
 #define BOARD_LED_PIN PC13
 
+// to fix
+/* yyy    u   t
+ * 
+ * 1 : y
+2 : yyy
+3 : 
+4 : uyy
+5 : 
+6 : tyy
+
+ */
 struct AMessage
 {
     char ucMessageID;
@@ -33,13 +44,29 @@ static void vSerialOutTask(void *pvParameters) {
 
 static void vCommTask(void *pvParameters) {
     for (;;) {
-        //vTaskDelay(1000);
-        if(xCommMgr.ReadSerialCommand()) {        
+        vTaskDelay(10);
+        
+        if(xCommMgr.ReadSerialCommand()) {     
+          
           txMessage.ucMessageID++;
           xCommMgr.ReadBuffer(txMessage.ucData, 20);
           //txMessage.ucData[0]++;
+          Serial3.println("sndq");
           xQueueSendToBack( xQueue, ( void * ) &txMessage, ( TickType_t ) 0 );
+          
         }
+        
+    }
+}
+
+static void vTimerTask(void *pvParameters) {
+    for (;;) {
+        vTaskDelay(10000);
+
+          txMessage.ucMessageID++;     
+          txMessage.ucData[0]=0;
+          xQueueSendToBack( xQueue, ( void * ) &txMessage, ( TickType_t ) 0 );
+      
     }
 }
 
@@ -74,7 +101,13 @@ void setup() {
                 NULL,
                 tskIDLE_PRIORITY + 2, // high
                 NULL);
-                            
+
+    xTaskCreate(vTimerTask,
+                "Task3",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                tskIDLE_PRIORITY + 2, // high
+                NULL);
     vTaskStartScheduler();
 }
 
