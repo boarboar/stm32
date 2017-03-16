@@ -11,7 +11,9 @@ class CommManager {
     //boolean ReadInt(int16_t *val) ;
     int16_t ReadInt() ;
     char ReadChar() ;
-    void ReadBuffer(char *pcBuf, uint16_t uLen);
+    //void Consume(char *pcBuf, uint16_t uLen);
+    const char *GetBuffer();
+    void Consume();
   protected:
     char buf[BUF_SIZE];
     uint8_t bytes;

@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 #include "comm_mgr.h"
-
+ 
 void CommManager::Init(uint32_t comm_speed) {
   bytes = 0;
   buf[bytes] = 0;
@@ -36,13 +36,25 @@ boolean CommManager::ReadSerialCommand()
   return false;
 }
 
-void CommManager::ReadBuffer(char *pcBuf, uint16_t uLen) {
+/*
+void CommManager::Consume(char *pcBuf, uint16_t uLen) {
   if(pcBuf) {
     uint16_t len=bytes;
     if(uLen<bytes) len=uLen;
     strncpy(pcBuf, buf, len);
     bytes=0;
+    buf[bytes]=0;
   }
+}
+*/
+
+void CommManager::Consume() {
+  bytes=0;
+  buf[bytes]=0;
+}
+
+const char *CommManager::GetBuffer() {
+  return buf;
 }
 
 boolean CommManager::Match(const char *cmd) {
@@ -59,7 +71,6 @@ boolean CommManager::Match(const char *cmd) {
   //return *cmd==0;
 }
 
-//boolean CommandReader::ReadInt(int16_t *val) {
 int16_t CommManager::ReadInt() {
   int16_t i=0;
   boolean sign=false;

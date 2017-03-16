@@ -1,20 +1,14 @@
 
 #include <MapleFreeRTOS821.h>
+#include <Servo.h>
 #include "comm_mgr.h"
 
 #define BOARD_LED_PIN PC13
 
-// to fix
-/* yyy    u   t
- * 
- * 1 : y
-2 : yyy
-3 : 
-4 : uyy
-5 : 
-6 : tyy
+#define SERVO_1_PIN PB12 //???
 
- */
+Servo xServo;
+
 struct AMessage
 {
     char ucMessageID;
@@ -26,11 +20,23 @@ struct AMessage rxMessage={0, ""};
 
 CommManager xCommMgr;
   
-QueueHandle_t xQueue=NULL;
+QueueHandle_t xLogQueue=NULL;
+xSemaphoreHandle xLogFree=NULL;
+
+static void vAddLogMsg(const char *pucMsg=NULL) {
+  if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
+    {
+      txMessage.ucMessageID++;     
+      if(pucMsg) 
+        strncpy(txMessage.ucData, pucMsg, 20);          
+      xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
+      xSemaphoreGive( xLogFree );
+    }
+}
 
 static void vSerialOutTask(void *pvParameters) {
     for (;;) {
-      if( xQueueReceive( xQueue, &rxMessage, ( TickType_t ) 10 ) )
+      if( xQueueReceive( xLogQueue, &rxMessage, ( TickType_t ) 10 ) )
         {
          digitalWrite(BOARD_LED_PIN, HIGH);
          Serial.print((int)rxMessage.ucMessageID);
@@ -44,16 +50,14 @@ static void vSerialOutTask(void *pvParameters) {
 
 static void vCommTask(void *pvParameters) {
     for (;;) {
-        vTaskDelay(10);
-        
-        if(xCommMgr.ReadSerialCommand()) {     
-          
-          txMessage.ucMessageID++;
-          xCommMgr.ReadBuffer(txMessage.ucData, 20);
-          //txMessage.ucData[0]++;
-          Serial3.println("sndq");
-          xQueueSendToBack( xQueue, ( void * ) &txMessage, ( TickType_t ) 0 );
-          
+        vTaskDelay(10);        
+        if(xCommMgr.ReadSerialCommand()) {               
+          //xCommMgr.Consume(txMessage.ucData, 20);
+          //Serial3.println("sndq");
+          //txMessage.ucMessageID++;          
+          //xLogQueueSendToBack( xQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
+          vAddLogMsg(xCommMgr.GetBuffer());          
+          xCommMgr.Consume();
         }
         
     }
@@ -62,52 +66,80 @@ static void vCommTask(void *pvParameters) {
 static void vTimerTask(void *pvParameters) {
     for (;;) {
         vTaskDelay(10000);
+        //txMessage.ucMessageID++;     
+        //strcpy(txMessage.ucData, "TMR");
+        vAddLogMsg("TMR");
+        //xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );      
+    }
+}
 
-          txMessage.ucMessageID++;     
-          txMessage.ucData[0]=0;
-          xQueueSendToBack( xQueue, ( void * ) &txMessage, ( TickType_t ) 0 );
-      
+static void vServoTask(void *pvParameters) {
+    for (;;) {
+        vTaskDelay(1000);
+        vAddLogMsg("SRV");        
     }
 }
 
 void setup() {
     delay(5000);
+    digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
     Serial.begin(115200); 
     xCommMgr.Init(115200);
     //Serial3.begin(115200); 
 
-    xQueue = xQueueCreate( 10, sizeof( struct AMessage ) );
+    vSemaphoreCreateBinary(xLogFree);
 
-    if( xQueue == NULL )
+    xLogQueue = xQueueCreate( 10, sizeof( struct AMessage ) );
+
+    if( xLogQueue == NULL )
     {
         /* Queue was not created and must not be used. */
-        Serial.println("Couldn't create Q");
+        Serial.println("Couldn't create LQ");
         return;
     }
 
-    Serial.println("Q OK");
+    Serial.println("LQ OK");
 
+    Serial.println("Init Servo...");
+    xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object
+    delay(500);
+    xServo.write(90);
+    delay(500);
+    xServo.write(0);
+    delay(500);
+    xServo.write(180);
+    delay(500);
+    xServo.write(90);
+    
     xTaskCreate(vSerialOutTask,
-                "Task1",
+                "TaskSO",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 tskIDLE_PRIORITY + 1, // low
                 NULL);
 
     xTaskCreate(vCommTask,
-                "Task2",
+                "TaskCom",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 2, // high
+                tskIDLE_PRIORITY + 1, // low
                 NULL);
 
     xTaskCreate(vTimerTask,
-                "Task3",
+                "TaskTmr",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 2, // high
+                tskIDLE_PRIORITY + 0, // min
                 NULL);
+
+    xTaskCreate(vServoTask,
+                "TaskSrv",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                tskIDLE_PRIORITY + 2, // mid
+                NULL);
+                                
     vTaskStartScheduler();
 }
 
