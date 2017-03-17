@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "comm_mgr.h"
+#include "base64.h"
  
 void CommManager::Init(uint32_t comm_speed) {
   bytes = 0;
@@ -22,6 +23,20 @@ boolean CommManager::ReadSerialCommand()
         Serial3.print("CMDOK[ ");
         Serial3.print(buf);
         Serial3.print(" ]");
+
+        if(buf[0]=='U') {
+          Serial3.println("trying to decode...");
+          unsigned char bufx[BUF_SIZE];
+          int sz=base64_decode(buf+1, bufx);
+          bufx[sz]=0;          
+          Serial3.println((char *)bufx);
+          Serial3.println("trying to encode...");
+          uint16_t data[4]={1,9,1,7};
+          sz=base64_encode((unsigned char const*) data, (char *)bufx, sizeof(uint16_t)*4);
+          bufx[sz]=0;          
+          Serial3.println((char *)bufx);          
+        }
+        
         return true; 
       } 
       return false; // skip 10 or 13 left         
