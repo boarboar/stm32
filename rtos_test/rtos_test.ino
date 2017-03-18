@@ -5,7 +5,7 @@
 
 #define BOARD_LED_PIN PC13
 
-#define SERVO_1_PIN PB12 //???
+#define SERVO_1_PIN PA8 
 
 Servo xServo;
 
@@ -74,6 +74,26 @@ static void vTimerTask(void *pvParameters) {
 }
 
 static void vServoTask(void *pvParameters) {
+    vTaskDelay(1000);
+    vAddLogMsg("SRV1");   
+    xServo.write(90);
+        vTaskDelay(1000);
+    vAddLogMsg("SRV2");   
+    xServo.write(0);
+        vTaskDelay(1000);
+    vAddLogMsg("SRV3");   
+    xServo.write(0);
+        vTaskDelay(1000);
+    vAddLogMsg("SRV4");   
+    xServo.write(180);
+    /*
+    delay(500);
+    xServo.write(0);
+    delay(500);
+    xServo.write(180);
+    delay(500);
+    xServo.write(90);
+  */
     for (;;) {
         vTaskDelay(1000);
         vAddLogMsg("SRV");        
@@ -103,15 +123,10 @@ void setup() {
 
     Serial.println("Init Servo...");
     xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object
-    delay(500);
-    xServo.write(90);
-    delay(500);
-    xServo.write(0);
-    delay(500);
-    xServo.write(180);
-    delay(500);
-    xServo.write(90);
+    Serial.println("Servo ok");
+ 
     
+    Serial.println("Starting...");
     xTaskCreate(vSerialOutTask,
                 "TaskSO",
                 configMINIMAL_STACK_SIZE,
@@ -132,13 +147,14 @@ void setup() {
                 NULL,
                 tskIDLE_PRIORITY + 0, // min
                 NULL);
-
+                
     xTaskCreate(vServoTask,
                 "TaskSrv",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 tskIDLE_PRIORITY + 2, // mid
                 NULL);
+  
                                 
     vTaskStartScheduler();
 }
