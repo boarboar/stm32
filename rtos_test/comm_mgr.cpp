@@ -10,7 +10,7 @@ void CommManager::Init(uint32_t comm_speed) {
   while (Serial3.available()) Serial3.read();  // eat garbage
 }
 
-// read serial data into buffer. execute command
+// read serial data into buffer
 boolean CommManager::ReadSerialCommand()
 {
   while (Serial3.available() && bytes < BUF_SIZE)
@@ -20,6 +20,7 @@ boolean CommManager::ReadSerialCommand()
     {
       if (bytes > 0) { 
         buf[bytes]=0; 
+        /*
         Serial3.print("CMDOK[ ");
         Serial3.print(buf);
         Serial3.print(" ]");
@@ -36,7 +37,7 @@ boolean CommManager::ReadSerialCommand()
           bufx[sz]=0;          
           Serial3.println((char *)bufx);          
         }
-        
+        */
         return true; 
       } 
       return false; // skip 10 or 13 left         
@@ -51,6 +52,13 @@ boolean CommManager::ReadSerialCommand()
   return false;
 }
 
+// read serial data into buffer
+boolean CommManager::ProcessCommand()
+{
+  strcpy(buf, "UNKN");
+  Serial3.println(buf);
+}
+
 /*
 void CommManager::Consume(char *pcBuf, uint16_t uLen) {
   if(pcBuf) {
@@ -63,11 +71,18 @@ void CommManager::Consume(char *pcBuf, uint16_t uLen) {
 }
 */
 
+/*
 void CommManager::Consume() {
   bytes=0;
   buf[bytes]=0;
 }
 
+void CommManager::Respond(const char *rsp) {
+  Serial3.println(rsp);
+}
+*/
+
+/*
 const char *CommManager::GetBuffer() {
   return buf;
 }
@@ -113,4 +128,6 @@ char CommManager::ReadChar() {
   pos++;
   return c;
 }
+
+*/
 

@@ -3,11 +3,11 @@
 #include <Servo.h>
 #include "comm_mgr.h"
 
+
 #define BOARD_LED_PIN PC13
 
 #define SERVO_1_PIN PA8 
 
-Servo xServo;
 
 struct AMessage
 {
@@ -17,13 +17,14 @@ struct AMessage
 
 struct AMessage txMessage={0, "a"};
 struct AMessage rxMessage={0, ""};
-
-CommManager xCommMgr;
   
 QueueHandle_t xLogQueue=NULL;
 xSemaphoreHandle xLogFree=NULL;
 
-static void vAddLogMsg(const char *pucMsg=NULL) {
+CommManager xCommMgr;
+Servo xServo;
+
+static void vAddLogMsg(const char *pucMsg=NULL) {  
   if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
     {
       txMessage.ucMessageID++;     
@@ -35,6 +36,7 @@ static void vAddLogMsg(const char *pucMsg=NULL) {
 }
 
 static void vSerialOutTask(void *pvParameters) {
+    Serial.println("Serial Out started.");
     for (;;) {
       if( xQueueReceive( xLogQueue, &rxMessage, ( TickType_t ) 10 ) )
         {
@@ -49,31 +51,30 @@ static void vSerialOutTask(void *pvParameters) {
 }
 
 static void vCommTask(void *pvParameters) {
+    vAddLogMsg("Comm Task started.");
     for (;;) {
         vTaskDelay(10);        
         if(xCommMgr.ReadSerialCommand()) {               
-          //xCommMgr.Consume(txMessage.ucData, 20);
-          //Serial3.println("sndq");
-          //txMessage.ucMessageID++;          
-          //xLogQueueSendToBack( xQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
-          vAddLogMsg(xCommMgr.GetBuffer());          
-          xCommMgr.Consume();
-        }
-        
+          vAddLogMsg(xCommMgr.GetBuffer());    
+          xCommMgr.ProcessCommand();
+          vAddLogMsg(xCommMgr.GetBuffer());  // response  
+          //xCmd.Process(xCommMgr.GetBuffer());      
+          //xCommMgr.Consume();
+          //xCommMgr.Respond(xCmd.GetResponce());
+        }        
     }
 }
 
 static void vTimerTask(void *pvParameters) {
+    vAddLogMsg("Timer Task started.");
     for (;;) {
         vTaskDelay(10000);
-        //txMessage.ucMessageID++;     
-        //strcpy(txMessage.ucData, "TMR");
         vAddLogMsg("TMR");
-        //xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );      
     }
 }
 
-static void vServoTask(void *pvParameters) {
+static void vSensorTask(void *pvParameters) {
+  /*
     vTaskDelay(1000);
     vAddLogMsg("SRV1");   
     xServo.write(90);
@@ -86,30 +87,23 @@ static void vServoTask(void *pvParameters) {
         vTaskDelay(1000);
     vAddLogMsg("SRV4");   
     xServo.write(180);
-    /*
-    delay(500);
-    xServo.write(0);
-    delay(500);
-    xServo.write(180);
-    delay(500);
-    xServo.write(90);
-  */
+   */
+    
+    vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(1000);
-        vAddLogMsg("SRV");        
+        vAddLogMsg("SENS");        
     }
 }
 
 void setup() {
-    delay(5000);
+    //delay(5000);
     digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
     Serial.begin(115200); 
     xCommMgr.Init(115200);
-    //Serial3.begin(115200); 
-
+    
     vSemaphoreCreateBinary(xLogFree);
-
     xLogQueue = xQueueCreate( 10, sizeof( struct AMessage ) );
 
     if( xLogQueue == NULL )
@@ -122,11 +116,9 @@ void setup() {
     Serial.println("LQ OK");
 
     Serial.println("Init Servo...");
-    xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object
-    Serial.println("Servo ok");
- 
-    
+    xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object 
     Serial.println("Starting...");
+    
     xTaskCreate(vSerialOutTask,
                 "TaskSO",
                 configMINIMAL_STACK_SIZE,
@@ -148,8 +140,8 @@ void setup() {
                 tskIDLE_PRIORITY + 0, // min
                 NULL);
                 
-    xTaskCreate(vServoTask,
-                "TaskSrv",
+    xTaskCreate(vSensorTask,
+                "TaskSens",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 tskIDLE_PRIORITY + 2, // mid
