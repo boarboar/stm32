@@ -8,6 +8,9 @@
 
 #define SERVO_1_PIN PA8 
 
+// need FT ports!
+#define US_IN_PORT PB13
+#define US_OUT_PORT  PB12
 
 struct AMessage
 {
@@ -93,6 +96,22 @@ static void vSensorTask(void *pvParameters) {
     for (;;) {
         vTaskDelay(1000);
         vAddLogMsg("SENS");        
+        uint32_t t0 = millis();  
+  
+  digitalWrite(US_OUT, LOW);
+  delayMicroseconds(2);
+  digitalWrite(US_OUT, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(US_OUT, LOW);
+  uint32_t d=pulseIn(US_IN, HIGH, 50000);
+  int16_t dist=(int16_t)(d/58);
+  
+  uint32_t t1 = millis() - t0;
+  Serial.print ("Sqrt calculations took (ms): ");
+  Serial.print(t1);
+  Serial.print("  Dist: ");
+  Serial.println(dist);
+  
     }
 }
 
@@ -100,6 +119,8 @@ void setup() {
     //delay(5000);
     digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
+      pinMode(US_OUT_PORT, OUTPUT);     
+  pinMode(US_IN_PORT, INPUT); 
     Serial.begin(115200); 
     xCommMgr.Init(115200);
     
