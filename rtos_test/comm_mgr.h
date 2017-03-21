@@ -24,3 +24,7 @@ class CommManager {
     uint8_t pos;
 };
 
+void itoa(int n, char s[]);
+void ltoa(int32_t n, char s[]);
+
+

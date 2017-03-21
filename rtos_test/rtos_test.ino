@@ -9,8 +9,8 @@
 #define SERVO_1_PIN PA8 
 
 // need FT ports!
-#define US_IN_PORT PB13
-#define US_OUT_PORT  PB12
+#define US_IN_PIN   PB13
+#define US_OUT_PIN  PB12
 
 struct AMessage
 {
@@ -69,13 +69,64 @@ static void vCommTask(void *pvParameters) {
 }
 
 static void vTimerTask(void *pvParameters) {
+    TickType_t xLastWakeTime;
+    int i;
+    int i1, i10, i100;
     vAddLogMsg("Timer Task started.");
-    for (;;) {
-        vTaskDelay(10000);
-        vAddLogMsg("TMR");
+    for (;;) {        
+        i1=i10=i100=0;
+        for(i=0; i<1000; i++) {
+          xLastWakeTime = xTaskGetTickCount();  
+          vTaskDelay(10);
+          xLastWakeTime = xTaskGetTickCount()-xLastWakeTime;
+          if(xLastWakeTime>100) i100++;
+          else if(xLastWakeTime>10) i10++;
+          i1++;
+        }
+        //vTaskDelay(10000);
+        //vAddLogMsg("TMR");
+        char buf[20]="T: ";
+        char bufn[8];
+        itoa(i1, bufn);
+        strcat(buf, bufn);
+        strcat(buf, " ");
+        itoa(i10, bufn);
+        strcat(buf, bufn);
+        strcat(buf, " ");
+        itoa(i100, bufn);
+        strcat(buf, bufn);
+        vAddLogMsg(buf);    
     }
 }
 
+static void vRealTimeTask(void *pvParameters) {
+    TickType_t xLastWakeTime;
+    int i;
+    int i1, i10, i100;
+    vAddLogMsg("Realtime Task started.");
+    for (;;) {        
+        i1=i10=i100=0;
+        for(i=0; i<1000; i++) {
+          xLastWakeTime = xTaskGetTickCount();  
+          vTaskDelay(10);
+          xLastWakeTime = xTaskGetTickCount()-xLastWakeTime;
+          if(xLastWakeTime>100) i100++;
+          else if(xLastWakeTime>10) i10++;
+          i1++;
+        }
+        char buf[20]="R: ";
+        char bufn[8];
+        itoa(i1, bufn);
+        strcat(buf, bufn);
+        strcat(buf, " ");
+        itoa(i10, bufn);
+        strcat(buf, bufn);
+        strcat(buf, " ");
+        itoa(i100, bufn);
+        strcat(buf, bufn);
+        vAddLogMsg(buf);    
+    }
+}
 static void vSensorTask(void *pvParameters) {
   /*
     vTaskDelay(1000);
@@ -95,23 +146,25 @@ static void vSensorTask(void *pvParameters) {
     vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(1000);
-        vAddLogMsg("SENS");        
+        //vAddLogMsg("SENS");        
         uint32_t t0 = millis();  
-  
-  digitalWrite(US_OUT, LOW);
-  delayMicroseconds(2);
-  digitalWrite(US_OUT, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(US_OUT, LOW);
-  uint32_t d=pulseIn(US_IN, HIGH, 50000);
-  int16_t dist=(int16_t)(d/58);
-  
-  uint32_t t1 = millis() - t0;
-  Serial.print ("Sqrt calculations took (ms): ");
-  Serial.print(t1);
-  Serial.print("  Dist: ");
-  Serial.println(dist);
-  
+        digitalWrite(US_OUT_PIN, LOW);
+        delayMicroseconds(2);
+        digitalWrite(US_OUT_PIN, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(US_OUT_PIN, LOW);
+        uint32_t d=pulseIn(US_IN_PIN, HIGH, 50000);
+        // if d==0 ...
+        int16_t dist=(int16_t)(d/58);
+        uint32_t t1 = millis() - t0;
+        char buf[20]="US: ";
+        char bufn[8];
+        itoa(dist, bufn);
+        strcat(buf, bufn);
+        strcat(buf, " ");
+        ltoa(t1, bufn);
+        strcat(buf, bufn);
+        vAddLogMsg(buf);        
     }
 }
 
@@ -119,8 +172,8 @@ void setup() {
     //delay(5000);
     digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
-      pinMode(US_OUT_PORT, OUTPUT);     
-  pinMode(US_IN_PORT, INPUT); 
+    pinMode(US_OUT_PIN, OUTPUT);     
+    pinMode(US_IN_PIN, INPUT); 
     Serial.begin(115200); 
     xCommMgr.Init(115200);
     
@@ -138,6 +191,10 @@ void setup() {
 
     Serial.println("Init Servo...");
     xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object 
+
+    Serial.print("Tick = ");
+    Serial.println(portTICK_PERIOD_MS);
+    
     Serial.println("Starting...");
     
     xTaskCreate(vSerialOutTask,
@@ -153,13 +210,6 @@ void setup() {
                 NULL,
                 tskIDLE_PRIORITY + 1, // low
                 NULL);
-
-    xTaskCreate(vTimerTask,
-                "TaskTmr",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                tskIDLE_PRIORITY + 0, // min
-                NULL);
                 
     xTaskCreate(vSensorTask,
                 "TaskSens",
@@ -168,7 +218,22 @@ void setup() {
                 tskIDLE_PRIORITY + 2, // mid
                 NULL);
   
-                                
+    
+    xTaskCreate(vTimerTask,
+                "TaskTmr",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                tskIDLE_PRIORITY + 0, // min
+                NULL);
+
+                                            
+    xTaskCreate(vRealTimeTask,
+                "TaskRT",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                tskIDLE_PRIORITY + 3, // min
+                NULL);
+                
     vTaskStartScheduler();
 }
 
