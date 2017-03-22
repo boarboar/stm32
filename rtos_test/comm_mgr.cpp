@@ -3,6 +3,9 @@
 #include "comm_mgr.h"
 #include "base64.h"
 
+//TODO
+// CLAENUP CMD PARAMS
+
 extern ComLogger xLogger;
  
 void CommManager::Init(uint32_t comm_speed) {

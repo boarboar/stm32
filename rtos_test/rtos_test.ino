@@ -179,7 +179,7 @@ static void vSensorTask(void *pvParameters) {
 }
 
 void setup() {
-    //delay(5000);
+    delay(5000);
     digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
     pinMode(US_OUT_PIN, OUTPUT);     
