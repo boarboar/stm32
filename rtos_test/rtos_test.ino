@@ -2,7 +2,7 @@
 #include <MapleFreeRTOS821.h>
 #include <Servo.h>
 #include "comm_mgr.h"
-
+#include "log.h"
 
 #define BOARD_LED_PIN PC13
 
@@ -12,6 +12,7 @@
 #define US_IN_PIN   PB13
 #define US_OUT_PIN  PB12
 
+/*
 struct AMessage
 {
     char ucMessageID;
@@ -23,10 +24,13 @@ struct AMessage rxMessage={0, ""};
   
 QueueHandle_t xLogQueue=NULL;
 xSemaphoreHandle xLogFree=NULL;
+*/
 
 CommManager xCommMgr;
+ComLogger xLogger;
 Servo xServo;
 
+/*
 static void vAddLogMsg(const char *pucMsg=NULL) {  
   if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
     {
@@ -37,10 +41,12 @@ static void vAddLogMsg(const char *pucMsg=NULL) {
       xSemaphoreGive( xLogFree );
     }
 }
+*/
 
 static void vSerialOutTask(void *pvParameters) {
-    Serial.println("Serial Out started.");
+    Serial.println("Serial Out Task started.");
     for (;;) {
+      /*
       if( xQueueReceive( xLogQueue, &rxMessage, ( TickType_t ) 10 ) )
         {
          digitalWrite(BOARD_LED_PIN, HIGH);
@@ -50,20 +56,24 @@ static void vSerialOutTask(void *pvParameters) {
          vTaskDelay(100);
          digitalWrite(BOARD_LED_PIN, LOW);
         }        
+        */
+       xLogger.Process();
+       vTaskDelay(100);
     }
 }
 
 static void vCommTask(void *pvParameters) {
-    vAddLogMsg("Comm Task started.");
+    xLogger.vAddLogMsg("Comm Task started.");
     for (;;) {
         vTaskDelay(10);        
-        if(xCommMgr.ReadSerialCommand()) {               
-          vAddLogMsg(xCommMgr.GetBuffer());    
+        if(xCommMgr.ReadSerialCommand()) {       
+          digitalWrite(BOARD_LED_PIN, HIGH);        
+          xLogger.vAddLogMsg(xCommMgr.GetBuffer());    
           xCommMgr.ProcessCommand();
-          vAddLogMsg(xCommMgr.GetBuffer());  // response  
-          //xCmd.Process(xCommMgr.GetBuffer());      
-          //xCommMgr.Consume();
-          //xCommMgr.Respond(xCmd.GetResponce());
+          xLogger.vAddLogMsg(xCommMgr.GetDbgBuffer());  // response        
+          xCommMgr.Consume();
+          //xCommMgr.Respond(xCmd.GetResponce());          
+          digitalWrite(BOARD_LED_PIN, LOW);
         }        
     }
 }
@@ -72,7 +82,7 @@ static void vTimerTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     int i;
     int i1, i10, i100;
-    vAddLogMsg("Timer Task started.");
+    xLogger.vAddLogMsg("Timer Task started.");
     for (;;) {        
         i1=i10=i100=0;
         for(i=0; i<1000; i++) {
@@ -85,7 +95,7 @@ static void vTimerTask(void *pvParameters) {
         }
         //vTaskDelay(10000);
         //vAddLogMsg("TMR");
-        char buf[20]="T: ";
+        char buf[32]="T: ";
         char bufn[8];
         itoa(i1, bufn);
         strcat(buf, bufn);
@@ -95,7 +105,7 @@ static void vTimerTask(void *pvParameters) {
         strcat(buf, " ");
         itoa(i100, bufn);
         strcat(buf, bufn);
-        vAddLogMsg(buf);    
+        xLogger.vAddLogMsg(buf);    
     }
 }
 
@@ -103,7 +113,7 @@ static void vRealTimeTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     int i;
     int i1, i10, i100;
-    vAddLogMsg("Realtime Task started.");
+    xLogger.vAddLogMsg("Realtime Task started.");
     for (;;) {        
         i1=i10=i100=0;
         for(i=0; i<1000; i++) {
@@ -124,7 +134,7 @@ static void vRealTimeTask(void *pvParameters) {
         strcat(buf, " ");
         itoa(i100, bufn);
         strcat(buf, bufn);
-        vAddLogMsg(buf);    
+        xLogger.vAddLogMsg(buf);    
     }
 }
 static void vSensorTask(void *pvParameters) {
@@ -143,7 +153,7 @@ static void vSensorTask(void *pvParameters) {
     xServo.write(180);
    */
     
-    vAddLogMsg("Sensor Task started.");
+    xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(1000);
         //vAddLogMsg("SENS");        
@@ -157,14 +167,14 @@ static void vSensorTask(void *pvParameters) {
         // if d==0 ...
         int16_t dist=(int16_t)(d/58);
         uint32_t t1 = millis() - t0;
-        char buf[20]="US: ";
+        char buf[32]="US: ";
         char bufn[8];
         itoa(dist, bufn);
         strcat(buf, bufn);
         strcat(buf, " ");
         ltoa(t1, bufn);
         strcat(buf, bufn);
-        vAddLogMsg(buf);        
+        xLogger.vAddLogMsg(buf);        
     }
 }
 
@@ -176,16 +186,19 @@ void setup() {
     pinMode(US_IN_PIN, INPUT); 
     Serial.begin(115200); 
     xCommMgr.Init(115200);
-    
+    xLogger.Init();
+
+    /*
     vSemaphoreCreateBinary(xLogFree);
     xLogQueue = xQueueCreate( 10, sizeof( struct AMessage ) );
 
     if( xLogQueue == NULL )
     {
-        /* Queue was not created and must not be used. */
+        // Queue was not created and must not be used. 
         Serial.println("Couldn't create LQ");
         return;
     }
+*/
 
     Serial.println("LQ OK");
 

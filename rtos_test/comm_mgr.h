@@ -1,5 +1,6 @@
 
-#define BUF_SIZE 64
+#define CM_BUF_SIZE 64
+#define CM_NVAL     2
 
 class CommManager {
   public:
@@ -10,18 +11,23 @@ class CommManager {
     void Reset(){ bytes=0; buf[0]=0;}
     boolean Match(const char *cmd);
     //boolean ReadInt(int16_t *val) ;
-    int16_t ReadInt() ;
     char ReadChar() ;
     */
-    //void Consume(char *pcBuf, uint16_t uLen);
+    void Consume();
     const char *GetBuffer();
+    const char *GetDbgBuffer();
     boolean ProcessCommand();
-    //void Consume();    
-    //void Respond(const char *rsp);    
+    int16_t ReadInt() ;    
   protected:
-    char buf[BUF_SIZE];
+    char buf[CM_BUF_SIZE];
+    char rsp[CM_BUF_SIZE];
+    char bufn[16];
     uint8_t bytes;
     uint8_t pos;
+    uint8_t verb;
+    uint8_t reg;
+    uint8_t vcnt;
+    uint16_t val[CM_NVAL];
 };
 
 void itoa(int n, char s[]);

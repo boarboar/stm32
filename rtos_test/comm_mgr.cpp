@@ -1,7 +1,9 @@
-#include <Arduino.h>
-
+#include <MapleFreeRTOS821.h>
+#include "log.h"
 #include "comm_mgr.h"
 #include "base64.h"
+
+extern ComLogger xLogger;
  
 void CommManager::Init(uint32_t comm_speed) {
   bytes = 0;
@@ -13,7 +15,7 @@ void CommManager::Init(uint32_t comm_speed) {
 // read serial data into buffer
 boolean CommManager::ReadSerialCommand()
 {
-  while (Serial3.available() && bytes < BUF_SIZE)
+  while (Serial3.available() && bytes < CM_BUF_SIZE)
   {
     buf[bytes] = Serial3.read();
     if (buf[bytes] == 10 || buf[bytes] == 13)
@@ -44,7 +46,7 @@ boolean CommManager::ReadSerialCommand()
     }
     bytes++;
   }
-  if(bytes>=BUF_SIZE) { 
+  if(bytes>=CM_BUF_SIZE) { 
     bytes=0; //overflow, probably caused hang up at start...    
     buf[bytes]=0; 
     //return false;     
@@ -52,11 +54,123 @@ boolean CommManager::ReadSerialCommand()
   return false;
 }
 
-// read serial data into buffer
+// process command
+// cmd:= setcmd | getcmd
+// getcmd := verb | reg
+// setcmd := verb | reg | val
+// val := int | list
+// list := '[' int, ... ']'
 boolean CommManager::ProcessCommand()
 {
-  strcpy(buf, "UNKN");
-  Serial3.println(buf);
+  pos=0;
+  verb=buf[0];
+  switch(verb) {
+    case 'G': // get cmd 
+      strcpy(rsp, "G ");
+      break;
+    case 'S': // get cmd 
+      strcpy(rsp, "S ");
+      break;
+    default:  
+      strcpy(buf, "BAD CMD");
+      Serial3.println("R -1");
+      return false;
+  }
+  pos=1;
+  reg=ReadInt();
+  if(reg==0) {
+      strcpy(buf, "BAD REG");
+      Serial3.println("R -2");
+      return false;
+  }
+  strcat(rsp, " ");
+  itoa(reg, bufn);
+  strcat(rsp, bufn);
+
+  // validate reg - TODO
+
+  if(verb=='G') {
+    // do get - TODO
+    Serial3.println("R 0,777");
+    return true;
+  }
+
+  while(isspace(buf[pos])) pos++;     
+
+  if(!buf[pos]) {
+    Serial3.println("R -3");
+    return false;
+  }
+ 
+  if(buf[pos]=='[') {
+    // array    
+    vcnt=0;
+    pos++;
+    while(1) { 
+        while(isspace(buf[pos])) pos++;     
+        if(!buf[pos]) {
+          Serial3.println("R -4");
+          return false;
+        }
+        if(buf[pos]==']') break;        
+        val[vcnt]=ReadInt(); // add to array
+        vcnt++;
+        if(vcnt>CM_NVAL) {
+          // too many vals
+          Serial3.println("R -5");
+          return false;
+        }        
+        while(isspace(buf[pos])) pos++;     
+        if(buf[pos]==',') pos++;
+    }     
+    strcat(rsp, " [@");
+    itoa(vcnt, bufn);
+    strcat(rsp, bufn);    
+  } else {
+    vcnt=1;
+    val[0]=ReadInt();
+    strcat(rsp, " ");
+    itoa(val[0], bufn);
+    strcat(rsp, bufn);    
+  }
+
+  // do set 
+  
+  Serial3.println("R 0");
+        
+  return true;
+}
+
+int16_t CommManager::ReadInt() {
+  int16_t val=0;
+  boolean sign=false;
+  while(isspace(buf[pos])) pos++;
+  if(buf[pos]=='+') pos++;
+  else if(buf[pos]=='-') { 
+    sign=true; 
+    pos++;
+  }
+  while (isdigit(buf[pos]))
+  {
+    val *= 10;
+    val += buf[pos] - '0';
+    pos++;
+  }
+  if(sign) val=-val;
+  return val;
+}
+
+const char *CommManager::GetBuffer() {
+  return buf;
+}
+
+const char *CommManager::GetDbgBuffer() {
+  return rsp;
+}
+
+void CommManager::Consume() {
+  bytes=0;
+  buf[bytes]=0;
 }
 
 /*
@@ -72,10 +186,6 @@ void CommManager::Consume(char *pcBuf, uint16_t uLen) {
 */
 
 /*
-void CommManager::Consume() {
-  bytes=0;
-  buf[bytes]=0;
-}
 
 void CommManager::Respond(const char *rsp) {
   Serial3.println(rsp);
@@ -83,9 +193,6 @@ void CommManager::Respond(const char *rsp) {
 */
 
 /*
-const char *CommManager::GetBuffer() {
-  return buf;
-}
 
 boolean CommManager::Match(const char *cmd) {
   uint8_t savepos=pos;
