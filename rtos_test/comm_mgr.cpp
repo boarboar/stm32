@@ -3,6 +3,9 @@
 #include "comm_mgr.h"
 #include "base64.h"
 
+
+// TODO allow , as a separator
+
 extern ComLogger xLogger;
  
 void CommManager::Init(uint32_t comm_speed) {
@@ -66,10 +69,10 @@ boolean CommManager::ProcessCommand()
   verb=buf[0];
   switch(verb) {
     case 'G': // get cmd 
-      strcpy(rsp, "G ");
+      strcpy(rsp, "G");
       break;
     case 'S': // get cmd 
-      strcpy(rsp, "S ");
+      strcpy(rsp, "S");
       break;
     default:  
       strcpy(buf, "BAD CMD");
@@ -124,12 +127,12 @@ boolean CommManager::ProcessCommand()
         if(buf[pos]==',') pos++;
     }     
     strcat(rsp, " [@");    
-    strcat(rsp, itoa(vcnt, bufn));    
+    itoa(vcnt, rsp+strlen(rsp));    
   } else {
     vcnt=1;
     val[0]=ReadInt();
     strcat(rsp, " ");
-    strcat(rsp, itoa(val[0], bufn));    
+    itoa(val[0], rsp+strlen(rsp));     
   }
 
   // do set 
