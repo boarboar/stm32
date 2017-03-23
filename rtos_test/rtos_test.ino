@@ -12,51 +12,13 @@
 #define US_IN_PIN   PB13
 #define US_OUT_PIN  PB12
 
-/*
-struct AMessage
-{
-    char ucMessageID;
-    char ucData[ 20 ];
-};
-
-struct AMessage txMessage={0, "a"};
-struct AMessage rxMessage={0, ""};
-  
-QueueHandle_t xLogQueue=NULL;
-xSemaphoreHandle xLogFree=NULL;
-*/
-
 CommManager xCommMgr;
 ComLogger xLogger;
 Servo xServo;
 
-/*
-static void vAddLogMsg(const char *pucMsg=NULL) {  
-  if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
-    {
-      txMessage.ucMessageID++;     
-      if(pucMsg) 
-        strncpy(txMessage.ucData, pucMsg, 20);          
-      xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
-      xSemaphoreGive( xLogFree );
-    }
-}
-*/
-
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
-      /*
-      if( xQueueReceive( xLogQueue, &rxMessage, ( TickType_t ) 10 ) )
-        {
-         digitalWrite(BOARD_LED_PIN, HIGH);
-         Serial.print((int)rxMessage.ucMessageID);
-         Serial.print(" : ");
-         Serial.println(rxMessage.ucData);
-         vTaskDelay(100);
-         digitalWrite(BOARD_LED_PIN, LOW);
-        }        
-        */
        xLogger.Process();
        vTaskDelay(100);
     }
@@ -71,7 +33,7 @@ static void vCommTask(void *pvParameters) {
           xLogger.vAddLogMsg(xCommMgr.GetBuffer());    
           xCommMgr.ProcessCommand();
           xLogger.vAddLogMsg(xCommMgr.GetDbgBuffer());  // response        
-          xCommMgr.Consume();
+          xCommMgr.Complete();
           //xCommMgr.Respond(xCmd.GetResponce());          
           digitalWrite(BOARD_LED_PIN, LOW);
         }        
@@ -91,20 +53,23 @@ static void vTimerTask(void *pvParameters) {
           xLastWakeTime = xTaskGetTickCount()-xLastWakeTime;
           if(xLastWakeTime>100) i100++;
           else if(xLastWakeTime>10) i10++;
-          i1++;
+          else i1++;
         }
         //vTaskDelay(10000);
         //vAddLogMsg("TMR");
         char buf[32]="T: ";
-        char bufn[8];
-        itoa(i1, bufn);
-        strcat(buf, bufn);
+        //char bufn[8];
+        //itoa(i1, bufn);
+        //strcat(buf, bufn);
+        itoa(i1, buf+strlen(buf));
         strcat(buf, " ");
-        itoa(i10, bufn);
-        strcat(buf, bufn);
+        //itoa(i10, bufn);
+        //strcat(buf, bufn);
+        itoa(i10, buf+strlen(buf));
         strcat(buf, " ");
-        itoa(i100, bufn);
-        strcat(buf, bufn);
+        //itoa(i100, bufn);
+        //strcat(buf, bufn);
+        itoa(i10, buf+strlen(buf));
         xLogger.vAddLogMsg(buf);    
     }
 }
@@ -122,7 +87,7 @@ static void vRealTimeTask(void *pvParameters) {
           xLastWakeTime = xTaskGetTickCount()-xLastWakeTime;
           if(xLastWakeTime>100) i100++;
           else if(xLastWakeTime>10) i10++;
-          i1++;
+          else i1++;
         }
         char buf[20]="R: ";
         char bufn[8];
@@ -157,7 +122,8 @@ static void vSensorTask(void *pvParameters) {
     for (;;) {
         vTaskDelay(1000);
         //vAddLogMsg("SENS");        
-        uint32_t t0 = millis();  
+        //uint32_t t0 = millis();  
+        TickType_t t=xTaskGetTickCount();
         digitalWrite(US_OUT_PIN, LOW);
         delayMicroseconds(2);
         digitalWrite(US_OUT_PIN, HIGH);
@@ -166,13 +132,13 @@ static void vSensorTask(void *pvParameters) {
         uint32_t d=pulseIn(US_IN_PIN, HIGH, 50000);
         // if d==0 ...
         int16_t dist=(int16_t)(d/58);
-        uint32_t t1 = millis() - t0;
+        t = xTaskGetTickCount() - t;
         char buf[32]="US: ";
         char bufn[8];
         itoa(dist, bufn);
         strcat(buf, bufn);
         strcat(buf, " ");
-        ltoa(t1, bufn);
+        ltoa(t, bufn);
         strcat(buf, bufn);
         xLogger.vAddLogMsg(buf);        
     }
@@ -187,20 +153,6 @@ void setup() {
     Serial.begin(115200); 
     xCommMgr.Init(115200);
     xLogger.Init();
-
-    /*
-    vSemaphoreCreateBinary(xLogFree);
-    xLogQueue = xQueueCreate( 10, sizeof( struct AMessage ) );
-
-    if( xLogQueue == NULL )
-    {
-        // Queue was not created and must not be used. 
-        Serial.println("Couldn't create LQ");
-        return;
-    }
-*/
-
-    Serial.println("LQ OK");
 
     Serial.println("Init Servo...");
     xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object 

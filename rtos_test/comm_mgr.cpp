@@ -3,9 +3,6 @@
 #include "comm_mgr.h"
 #include "base64.h"
 
-//TODO
-// CLAENUP CMD PARAMS
-
 extern ComLogger xLogger;
  
 void CommManager::Init(uint32_t comm_speed) {
@@ -126,15 +123,13 @@ boolean CommManager::ProcessCommand()
         while(isspace(buf[pos])) pos++;     
         if(buf[pos]==',') pos++;
     }     
-    strcat(rsp, " [@");
-    itoa(vcnt, bufn);
-    strcat(rsp, bufn);    
+    strcat(rsp, " [@");    
+    strcat(rsp, itoa(vcnt, bufn));    
   } else {
     vcnt=1;
     val[0]=ReadInt();
     strcat(rsp, " ");
-    itoa(val[0], bufn);
-    strcat(rsp, bufn);    
+    strcat(rsp, itoa(val[0], bufn));    
   }
 
   // do set 
@@ -171,9 +166,10 @@ const char *CommManager::GetDbgBuffer() {
   return rsp;
 }
 
-void CommManager::Consume() {
+void CommManager::Complete() {
   bytes=0;
   buf[bytes]=0;
+  verb=reg=vcnt=0;
 }
 
 /*
@@ -257,7 +253,7 @@ char CommManager::ReadChar() {
 }  
 
 /* itoa:  convert n to characters in s */
- void itoa(int n, char s[])
+ char* itoa(int n, char s[])
  {
      int i, sign;
 
@@ -275,7 +271,7 @@ char CommManager::ReadChar() {
 
 
 /* itoa:  convert n to characters in s */
- void ltoa(int32_t n, char s[])
+ char* ltoa(int32_t n, char s[])
  {
      int32_t i, sign;
 
