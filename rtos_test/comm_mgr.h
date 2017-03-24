@@ -14,7 +14,7 @@ class CommManager {
   protected:
     char buf[CM_BUF_SIZE];
     char rsp[CM_BUF_SIZE];
-    char bufn[16];
+    //char bufn[16];
     uint8_t bytes;
     uint8_t pos;
     uint8_t verb;
@@ -23,7 +23,11 @@ class CommManager {
     uint16_t val[CM_NVAL];
 };
 
-char* itoa(int n, char s[]);
-char* ltoa(int32_t n, char s[]);
+void itoa(int n, char s[]);
+void ltoa(int32_t n, char s[]);
+
+inline void itoa_cat(int n, char s[]) { itoa(n, s+strlen(s)); }
+inline void ltoa_cat(int n, char s[]) { ltoa(n, s+strlen(s)); }
+
 
 

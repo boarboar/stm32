@@ -1,10 +1,17 @@
 
 #include <MapleFreeRTOS821.h>
 #include <Servo.h>
+#include <Wire.h>
 #include "comm_mgr.h"
 #include "log.h"
+#include "mpu.h"
 
 #define BOARD_LED_PIN PC13
+
+#define SCL_PIN PB6
+#define SDA_PIN PB7
+
+const int MPU_SDL=2;
 
 #define SERVO_1_PIN PA8 
 
@@ -55,21 +62,17 @@ static void vTimerTask(void *pvParameters) {
           else if(xLastWakeTime>10) i10++;
           else i1++;
         }
-        //vTaskDelay(10000);
-        //vAddLogMsg("TMR");
         char buf[32]="T: ";
-        //char bufn[8];
-        //itoa(i1, bufn);
-        //strcat(buf, bufn);
+        /*
         itoa(i1, buf+strlen(buf));
         strcat(buf, " ");
-        //itoa(i10, bufn);
-        //strcat(buf, bufn);
         itoa(i10, buf+strlen(buf));
         strcat(buf, " ");
-        //itoa(i100, bufn);
-        //strcat(buf, bufn);
         itoa(i10, buf+strlen(buf));
+        */
+        itoa_cat(i1, buf);
+        itoa_cat(i10, buf);
+        itoa_cat(i100, buf);
         xLogger.vAddLogMsg(buf);    
     }
 }
@@ -90,31 +93,21 @@ static void vRealTimeTask(void *pvParameters) {
           else i1++;
         }
         char buf[20]="R: ";
-        char bufn[8];
-        itoa(i1, bufn);
-        strcat(buf, bufn);
+        /*
+        itoa(i1, buf+strlen(buf));
         strcat(buf, " ");
-        itoa(i10, bufn);
-        strcat(buf, bufn);
+        itoa(i10, buf+strlen(buf));
         strcat(buf, " ");
-        itoa(i100, bufn);
-        strcat(buf, bufn);
+        itoa(i100, buf+strlen(buf));
+        */
+        itoa_cat(i1, buf);
+        itoa_cat(i10, buf);
+        itoa_cat(i100, buf);
         xLogger.vAddLogMsg(buf);    
     }
 }
 static void vSensorTask(void *pvParameters) {
-  /*
-    vTaskDelay(1000);
-    vAddLogMsg("SRV1");   
-    xServo.write(90);
-        vTaskDelay(1000);
-    vAddLogMsg("SRV2");   
-    xServo.write(0);
-        vTaskDelay(1000);
-    vAddLogMsg("SRV3");   
-    xServo.write(0);
-        vTaskDelay(1000);
-    vAddLogMsg("SRV4");   
+  /*    
     xServo.write(180);
    */
     
@@ -135,11 +128,16 @@ static void vSensorTask(void *pvParameters) {
         t = xTaskGetTickCount() - t;
         char buf[32]="US: ";
         char bufn[8];
+        /*
         itoa(dist, bufn);
         strcat(buf, bufn);
         strcat(buf, " ");
         ltoa(t, bufn);
         strcat(buf, bufn);
+        */
+        itoa_cat(dist, buf);
+        strcat(buf, " ");
+        itoa_cat((int)t, buf);
         xLogger.vAddLogMsg(buf);        
     }
 }
@@ -154,6 +152,11 @@ void setup() {
     xCommMgr.Init(115200);
     xLogger.Init();
 
+    Serial.println("Init Wire...");
+    //Wire.begin(SCL_PIN, SDA_PIN);
+    Wire.begin();
+    MpuDrv::Mpu.init();
+     
     Serial.println("Init Servo...");
     xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object 
 

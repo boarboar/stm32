@@ -59,18 +59,22 @@ boolean CommManager::ReadSerialCommand()
 
 // process command
 // cmd:= setcmd | getcmd
-// getcmd := verb | reg
-// setcmd := verb | reg | val
+// getcmd := verb [,] reg
+// setcmd := verb [,] reg [,] val
 // val := int | list
-// list := '[' int, ... ']'
+// list := '[' int [,] ... ']'
 boolean CommManager::ProcessCommand()
 {
   pos=0;
   verb=buf[0];
   switch(verb) {
+    case 'g': 
+      verb='G';
     case 'G': // get cmd 
       strcpy(rsp, "G");
       break;
+    case 's':  
+      verb='S'; 
     case 'S': // get cmd 
       strcpy(rsp, "S");
       break;
@@ -79,6 +83,9 @@ boolean CommManager::ProcessCommand()
       Serial3.println("R -1");
       return false;
   }
+
+  while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
+  
   pos=1;
   reg=ReadInt();
   if(reg==0) {
@@ -87,18 +94,20 @@ boolean CommManager::ProcessCommand()
       return false;
   }
   strcat(rsp, " ");
-  itoa(reg, bufn);
-  strcat(rsp, bufn);
+  //itoa(reg, bufn);
+  //strcat(rsp, bufn);
+  itoa_cat(reg, rsp);
 
   // validate reg - TODO
 
   if(verb=='G') {
     // do get - TODO
+    // switch ...
     Serial3.println("R 0,777");
     return true;
   }
 
-  while(isspace(buf[pos])) pos++;     
+  while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
 
   if(!buf[pos]) {
     Serial3.println("R -3");
@@ -127,15 +136,18 @@ boolean CommManager::ProcessCommand()
         if(buf[pos]==',') pos++;
     }     
     strcat(rsp, " [@");    
-    itoa(vcnt, rsp+strlen(rsp));    
+    //itoa(vcnt, rsp+strlen(rsp));    
+    itoa_cat(vcnt, rsp);    
   } else {
     vcnt=1;
     val[0]=ReadInt();
     strcat(rsp, " ");
-    itoa(val[0], rsp+strlen(rsp));     
+    //itoa(val[0], rsp+strlen(rsp));     
+    itoa_cat(val[0], rsp);
   }
 
   // do set 
+  // switch ...
   
   Serial3.println("R 0");
         
@@ -256,7 +268,7 @@ char CommManager::ReadChar() {
 }  
 
 /* itoa:  convert n to characters in s */
- char* itoa(int n, char s[])
+void itoa(int n, char s[])
  {
      int i, sign;
 
@@ -274,7 +286,8 @@ char CommManager::ReadChar() {
 
 
 /* itoa:  convert n to characters in s */
- char* ltoa(int32_t n, char s[])
+
+void ltoa(int32_t n, char s[])
  {
      int32_t i, sign;
 
@@ -289,4 +302,5 @@ char CommManager::ReadChar() {
      s[i] = '\0';
      reverse(s);
 }  
+
 
