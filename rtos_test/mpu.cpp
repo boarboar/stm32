@@ -34,20 +34,23 @@ int16_t MpuDrv::init() {
   //fail_reason=0;
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) fail_cnt[i]=0;
   resetIntegrator();
-  Serial.println(F("Init I2C dev..."));
+  Serial.println("Init I2C dev...");
   mpu.initialize();
   // verify connection
-  Serial.println(F("Test device conn..."));
+  Serial.println("Test device conn...");
   if(!mpu.testConnection()) {
-    Serial.println(F("MPU6050 conn fail"));
+    Serial.println("MPU6050 conn fail");
     need_reset=1;
     return 0;
   }
+
   // load and configure the DMP  
-  Serial.println(F("Init DMP..."));
-  yield();
+  Serial.println("Init DMP...");
+
+  //yield();
   uint8_t devStatus = mpu.dmpInitialize();
-  yield();  
+
+  //yield();  
   if (devStatus == 0) {
     // supply your own gyro offsets here, scaled for min sensitivity
     mpu.setXGyroOffset(220);
@@ -56,7 +59,7 @@ int16_t MpuDrv::init() {
     mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
   
     // turn on the DMP, now that it's ready
-    Serial.println(F("Enab DMP..."));
+    Serial.println("Enab DMP...");
     mpu.setDMPEnabled(true);
 
     // enable Arduino interrupt detection
@@ -70,13 +73,13 @@ int16_t MpuDrv::init() {
     dmpStatus=ST_WUP;
     start=millis();
     //@@@@  Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU, Logger::UMP_LOGGER_EVENT, MPU_FAIL_INIT_OK, "IMU_INT_OK");  
-    Serial.print(F("DMP ok! Wait for int...FIFO sz is ")); Serial.println(packetSize);    
+    Serial.print("DMP ok! Wait for int...FIFO sz is "); Serial.println(packetSize);    
   } else {
     // ERROR!
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
     // (if it's going to break, usually the code will be 1)
-    Serial.print(F("DMP Init fail, code ")); Serial.println(devStatus);
+    Serial.print("DMP Init fail, code "); Serial.println(devStatus);
     dmpStatus = ST_FAIL;
     //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_INIT_OK, "IMU_INT_FL");  
     need_reset=1;

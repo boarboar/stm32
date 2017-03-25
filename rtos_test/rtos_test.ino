@@ -11,8 +11,6 @@
 #define SCL_PIN PB6
 #define SDA_PIN PB7
 
-const int MPU_SDL=2;
-
 #define SERVO_1_PIN PA8 
 
 // need FT ports!
@@ -127,14 +125,6 @@ static void vSensorTask(void *pvParameters) {
         int16_t dist=(int16_t)(d/58);
         t = xTaskGetTickCount() - t;
         char buf[32]="US: ";
-        char bufn[8];
-        /*
-        itoa(dist, bufn);
-        strcat(buf, bufn);
-        strcat(buf, " ");
-        ltoa(t, bufn);
-        strcat(buf, bufn);
-        */
         itoa_cat(dist, buf);
         strcat(buf, " ");
         itoa_cat((int)t, buf);
