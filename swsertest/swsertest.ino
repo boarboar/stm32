@@ -27,7 +27,7 @@ void loop() {
     swSer.write(Serial.read());
   }
 */
-delay(10);
+delay(100);
 swSer.println("G 1");
 while (swSer.available() > 0) {
     Serial.write(swSer.read());
