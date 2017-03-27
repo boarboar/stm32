@@ -1,7 +1,5 @@
-#include <Arduino.h>
-//#include "Wire.h"
-//#include "stat.h"
-//#include "logger.h"
+#include <MapleFreeRTOS821.h>
+#include "log.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "mpu.h"
 
@@ -10,6 +8,8 @@
 #define G_FORCE 9.80665f
 #define G_SCALE (G_FORCE/SCALE_A)
 #define A_K 0.3f
+
+extern ComLogger xLogger;
 
 MpuDrv MpuDrv::Mpu; // singleton
 
@@ -97,6 +97,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     //Serial.println(F("MPU - no data in 1s!!!"));
     //@@@@Stat::StatStore.mpu_ndt_cnt++;
     //init(); // RESET MPU
+    xLogger.vAddLogMsg("MPU - no data in 1s!");
     need_reset=1;
     data_ready=0;
     fail_cnt[MPU_FAIL_NODATA_IDX]++;
@@ -117,6 +118,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     //@@@@Stat::StatStore.mpu_owfl_cnt++;
     fail_cnt[MPU_FAIL_FIFOOVFL_IDX]++;
     //Serial.println(F("FIFO overflow!!!"));
+    xLogger.vAddLogMsg("FIFO overflow!");
     return -2;
   } 
   // otherwise, check for DMP data ready interrupt (this should happen frequently)
@@ -129,6 +131,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   if(fifoCount < packetSize) {
     //Serial.println(F("FIFO wait - giveup!!!"));
     //@@@@Stat::StatStore.mpu_gup_cnt++;
+    xLogger.vAddLogMsg("FIFO wait - giveup!");
     fail_cnt[MPU_FAIL_FIFOTMO_IDX]++;
     return 0; // giveup
   }
@@ -139,6 +142,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   if(fifoCount >0) { 
     //Serial.print(F("FIFO excess : ")); Serial.println(fifoCount);
     //@@@@Stat::StatStore.mpu_exc_cnt++;
+    xLogger.vAddLogMsg("FIFO excess!");
     mpu.resetFIFO();
     fifoCount=0;
     fail_cnt[MPU_FAIL_FIFOEXCESS_IDX]++;
@@ -154,7 +158,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     ad16[0]=aa16.x-aa16_0.x; ad16[1]=aa16.y-aa16_0.y; ad16[2]=aa16.z-aa16_0.z;                   
     for(i=0; i<4; i++) {e=q16[i]-q16_0[i]; if(e<0) e=-e; if(e>qe) qe=e;}
     for(i=0; i<3; i++) {e=ad16[i]; if(e<0) e=-e; if(e>ae) ae=e;}        
-        
+        /*
    Serial.println((millis()-start)/1000);
    DbgPrintQInt16("\tQ16-0", q16_0);
    DbgPrintQInt16("\tQ16-1", q16);
@@ -163,13 +167,21 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    DbgPrintVectorInt16("\tAcc-1\t", &aa16);
    Serial.print(F("Q16 Err:\t")); Serial.print(qe); Serial.print(F("\tA16 Err:\t")); Serial.print(ae); 
    Serial.print("\tCC:\t"); Serial.print(conv_count); Serial.print("\tT:\t"); Serial.println((millis()-start)/1000);
-        
+        */
+   char buf[36];
+   strcpy(buf, "QE: ");
+   itoa_cat(qe, buf);     
+   strcat(buf, " AE: ");
+   itoa_cat(ae, buf);   
+   xLogger.vAddLogMsg(buf);
+     
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
       conv_count++;
       if((millis()-start)/1000 > INIT_PERIOD_MIN && conv_count>3) settled=true;                  
     } else conv_count=0;  
    if((millis()-start)/1000 > INIT_PERIOD_MAX) {
-      Serial.println(F("===MPU Failed to converge, however switching to settled status...")); // TODO -?
+      //Serial.println(F("===MPU Failed to converge, however switching to settled status...")); // TODO -?
+      xLogger.vAddLogMsg("MPU Failed to converge");
       settled=true;
       //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CONVTMO, "IMU_CVT_TM");  
     }
@@ -178,7 +190,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    aa16_0 = aa16;
         
    if(settled) {
-      Serial.print(F("===MPU Converged, cnvcnt=")); Serial.println(conv_count);
+      //Serial.print(F("===MPU Converged, cnvcnt=")); Serial.println(conv_count);
+      xLogger.vAddLogMsg("MPU converged");
       start=micros();
       dmpStatus=ST_READY;        
       //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_EVENT, MPU_FAIL_CONVTMO, "IMU_CVT_OK");  

@@ -23,11 +23,7 @@ class CommManager {
     uint16_t val[CM_NVAL];
 };
 
-void itoa(int n, char s[]);
-void ltoa(int32_t n, char s[]);
 
-inline void itoa_cat(int n, char s[]) { itoa(n, s+strlen(s)); }
-inline void ltoa_cat(int n, char s[]) { ltoa(n, s+strlen(s)); }
 
 
 

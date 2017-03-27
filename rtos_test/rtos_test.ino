@@ -25,7 +25,7 @@ static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
        xLogger.Process();
-       vTaskDelay(100);
+       vTaskDelay(20);
     }
 }
 
@@ -79,29 +79,12 @@ static void vRealTimeTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     int i;
     int i1, i10, i100;
-    xLogger.vAddLogMsg("Realtime Task started.");
-    for (;;) {        
-        i1=i10=i100=0;
-        for(i=0; i<1000; i++) {
-          xLastWakeTime = xTaskGetTickCount();  
-          vTaskDelay(10);
-          xLastWakeTime = xTaskGetTickCount()-xLastWakeTime;
-          if(xLastWakeTime>100) i100++;
-          else if(xLastWakeTime>10) i10++;
-          else i1++;
-        }
-        char buf[20]="R: ";
-        /*
-        itoa(i1, buf+strlen(buf));
-        strcat(buf, " ");
-        itoa(i10, buf+strlen(buf));
-        strcat(buf, " ");
-        itoa(i100, buf+strlen(buf));
-        */
-        itoa_cat(i1, buf);
-        itoa_cat(i10, buf);
-        itoa_cat(i100, buf);
-        xLogger.vAddLogMsg(buf);    
+    xLogger.vAddLogMsg("MPU Task started.");
+    xLastWakeTime = xTaskGetTickCount();  
+    for (;;) { 
+      vTaskDelay(3); 
+      MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
+      xLastWakeTime = xTaskGetTickCount();  
     }
 }
 static void vSensorTask(void *pvParameters) {
@@ -111,7 +94,7 @@ static void vSensorTask(void *pvParameters) {
     
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
-        vTaskDelay(1000);
+        vTaskDelay(200);
         //vAddLogMsg("SENS");        
         //uint32_t t0 = millis();  
         TickType_t t=xTaskGetTickCount();
@@ -173,7 +156,7 @@ void setup() {
                 "TaskSens",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 2, // mid
+                tskIDLE_PRIORITY + 3, // mid
                 NULL);
   
     
@@ -189,7 +172,7 @@ void setup() {
                 "TaskRT",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 3, // min
+                tskIDLE_PRIORITY + 3, // max
                 NULL);
                 
     vTaskStartScheduler();
