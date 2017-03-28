@@ -19,6 +19,7 @@ uint8_t docrc(char *buf) {
             crc = (crc >> 1);
         }
       }
+      pos++;
     }
 
  return crc;
@@ -48,22 +49,22 @@ void loop() {
     swSer.write(Serial.read());
   }
 */
-delay(100);
+delay(1000);
 char buf[20];
 strcpy(buf, "G 1");
 swSer.print(buf);
-swSer.print("#");
+swSer.print("%");
 swSer.println(docrc(buf));
 
 while (swSer.available() > 0) {
     Serial.write(swSer.read());
   }
   
-delay(100);
+delay(1000);
 
 strcpy(buf, "S 1,[2,34]");
 swSer.print(buf);
-swSer.print("#");
+swSer.print("%");
 swSer.println(docrc(buf));
 
 while (swSer.available() > 0) {

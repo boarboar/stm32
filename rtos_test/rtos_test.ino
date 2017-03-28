@@ -53,6 +53,7 @@ static void vLazyTask(void *pvParameters) {
     int i1, i10, i100;
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
+      vTaskDelay(1000);
       /*
         i1=i10=i100=0;
         for(i=0; i<1000; i++) {
@@ -72,7 +73,7 @@ static void vLazyTask(void *pvParameters) {
 
         // TODO - test IMU reset flag
 
-        float yaw;
+        float yaw=0.0;
         if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
         {
           yaw = MpuDrv::Mpu.getYaw();  
@@ -112,7 +113,7 @@ static void vSensorTask(void *pvParameters) {
     
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
-        vTaskDelay(200);
+        vTaskDelay(10000);
         //vAddLogMsg("SENS");        
         //uint32_t t0 = millis();  
         TickType_t t=xTaskGetTickCount();

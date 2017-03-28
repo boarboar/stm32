@@ -25,11 +25,11 @@ boolean CommManager::ReadSerialCommand()
     {
       if (bytes > 0) { 
         buf[bytes]=0; 
-        /*
+        
         Serial3.print("CMDOK[ ");
         Serial3.print(buf);
         Serial3.print(" ]");
-
+/*
         if(buf[0]=='U') {
           Serial3.println("trying to decode...");
           unsigned char bufx[BUF_SIZE];
@@ -80,6 +80,7 @@ boolean CommManager::ProcessCommand()
             crc = (crc >> 1);
         }
       }
+      pos++;
     }
 
   if(buf[pos]=='%') {
