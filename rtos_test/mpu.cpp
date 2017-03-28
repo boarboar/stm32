@@ -94,10 +94,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
 
   if(data_ready && (micros()-start)/1000000L>1) {
     // no data from MPU after 1sec
-    //Serial.println(F("MPU - no data in 1s!!!"));
     //@@@@Stat::StatStore.mpu_ndt_cnt++;
-    //init(); // RESET MPU
-    xLogger.vAddLogMsg("MPU - no data in 1s!");
+    //xLogger.vAddLogMsg("MPU - no data in 1s!");
     need_reset=1;
     data_ready=0;
     fail_cnt[MPU_FAIL_NODATA_IDX]++;
@@ -117,8 +115,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     fifoCount=0;
     //@@@@Stat::StatStore.mpu_owfl_cnt++;
     fail_cnt[MPU_FAIL_FIFOOVFL_IDX]++;
-    //Serial.println(F("FIFO overflow!!!"));
-    xLogger.vAddLogMsg("FIFO overflow!");
+    //xLogger.vAddLogMsg("FIFO overflow!");
     return -2;
   } 
   // otherwise, check for DMP data ready interrupt (this should happen frequently)
@@ -129,9 +126,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   //if(fifoCount < packetSize) return 0; // ???
   while (fifoCount < packetSize && i++<5) { fifoCount = mpu.getFIFOCount(); yield(); } 
   if(fifoCount < packetSize) {
-    //Serial.println(F("FIFO wait - giveup!!!"));
     //@@@@Stat::StatStore.mpu_gup_cnt++;
-    xLogger.vAddLogMsg("FIFO wait - giveup!");
+    //xLogger.vAddLogMsg("FIFO wait - giveup!");
     fail_cnt[MPU_FAIL_FIFOTMO_IDX]++;
     return 0; // giveup
   }
@@ -140,9 +136,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   //mpu.resetFIFO(); fifoCount=0; // this is in case of overflows... 
   fifoCount -= packetSize;
   if(fifoCount >0) { 
-    //Serial.print(F("FIFO excess : ")); Serial.println(fifoCount);
     //@@@@Stat::StatStore.mpu_exc_cnt++;
-    xLogger.vAddLogMsg("FIFO excess!");
+    //xLogger.vAddLogMsg("FIFO excess!");
     mpu.resetFIFO();
     fifoCount=0;
     fail_cnt[MPU_FAIL_FIFOEXCESS_IDX]++;
@@ -169,10 +164,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    Serial.print("\tCC:\t"); Serial.print(conv_count); Serial.print("\tT:\t"); Serial.println((millis()-start)/1000);
         */
    char buf[36];
-   strcpy(buf, "QE: ");
-   itoa_cat(qe, buf);     
-   strcat(buf, " AE: ");
-   itoa_cat(ae, buf);   
+   strcpy(buf, "QE: "); itoa_cat(qe, buf);     
+   strcat(buf, " AE: "); itoa_cat(ae, buf);   
    xLogger.vAddLogMsg(buf);
      
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
@@ -252,6 +245,7 @@ void MpuDrv::resetIntegrator() {
 void MpuDrv::process() {
   Quaternion q, q0;
   VectorFloat gravity;    
+  char buf[20];
   mpu.dmpGetQuaternion(&q, q16);
   mpu.dmpGetQuaternion(&q0, q16_0);
   q0=q0.getConjugate();
@@ -262,7 +256,11 @@ void MpuDrv::process() {
   // flush alarms
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
     if(fail_cnt[i]) {
-      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CYCLE+i, fail_cnt[i]);  
+      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CYCLE+i, fail_cnt[i]);        
+      strcpy(buf, "MPF ");
+      itoa_cat(i, buf); strcat(buf, ",");
+      itoa_cat(fail_cnt[i], buf); 
+      xLogger.vAddLogMsg(buf);
       fail_cnt[i]=0;
     }
   }

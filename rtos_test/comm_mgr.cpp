@@ -65,6 +65,36 @@ boolean CommManager::ReadSerialCommand()
 // list := '[' int [,] ... ']'
 boolean CommManager::ProcessCommand()
 {
+  // check crc
+  uint8_t crc=0, i;
+  pos=0;
+  
+  while(buf[pos] && buf[pos]!='%')
+    {      
+      crc = crc ^ buf[pos];
+      for (i=0; i<8; i++) {
+        if (crc & 1) {
+            crc = (crc >> 1) ^0x8c;
+        }
+        else {
+            crc = (crc >> 1);
+        }
+      }
+    }
+
+  if(buf[pos]=='%') {
+    pos++;
+    while(isspace(buf[pos])) pos++;
+    uint8_t mcrc=(uint8_t)ReadInt();    
+    if(crc==mcrc) Serial3.println("CRC OK");
+    else {
+      Serial3.print("CRC FAIL ");
+      Serial3.print(crc);
+      Serial3.print(" ");
+      Serial3.println(mcrc);
+    }
+  }
+  
   pos=0;
   verb=buf[0];
   switch(verb) {

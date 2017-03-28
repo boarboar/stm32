@@ -21,6 +21,8 @@ CommManager xCommMgr;
 ComLogger xLogger;
 Servo xServo;
 
+xSemaphoreHandle xIMUFree;
+
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
@@ -45,12 +47,13 @@ static void vCommTask(void *pvParameters) {
     }
 }
 
-static void vTimerTask(void *pvParameters) {
+static void vLazyTask(void *pvParameters) {
     TickType_t xLastWakeTime;
     int i;
     int i1, i10, i100;
-    xLogger.vAddLogMsg("Timer Task started.");
-    for (;;) {        
+    xLogger.vAddLogMsg("Lazy Task started.");
+    for (;;) {       
+      /*
         i1=i10=i100=0;
         for(i=0; i<1000; i++) {
           xLastWakeTime = xTaskGetTickCount();  
@@ -60,33 +63,48 @@ static void vTimerTask(void *pvParameters) {
           else if(xLastWakeTime>10) i10++;
           else i1++;
         }
-        char buf[32]="T: ";
-        /*
-        itoa(i1, buf+strlen(buf));
-        strcat(buf, " ");
-        itoa(i10, buf+strlen(buf));
-        strcat(buf, " ");
-        itoa(i10, buf+strlen(buf));
-        */
-        itoa_cat(i1, buf);
-        itoa_cat(i10, buf);
+        char buf[32]="T: ";        
+        itoa_cat(i1, buf); strcat(buf, " ");
+        itoa_cat(i10, buf); strcat(buf, " ");
         itoa_cat(i100, buf);
         xLogger.vAddLogMsg(buf);    
+*/
+
+        // TODO - test IMU reset flag
+
+        float yaw;
+        if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+        {
+          yaw = MpuDrv::Mpu.getYaw();  
+          xSemaphoreGive( xIMUFree );
+        } 
+
+        int yaw_i = yaw*180.0/PI;
+        char buf[20];
+        
+        strcpy(buf, "YAW: ");
+        itoa_cat(yaw_i, buf);
+        xLogger.vAddLogMsg(buf);  
     }
 }
 
-static void vRealTimeTask(void *pvParameters) {
+static void vIMU_Task(void *pvParameters) {
     TickType_t xLastWakeTime;
     int i;
     int i1, i10, i100;
-    xLogger.vAddLogMsg("MPU Task started.");
-    xLastWakeTime = xTaskGetTickCount();  
+    xLogger.vAddLogMsg("IMU Task started.");
+    //xLastWakeTime = xTaskGetTickCount();  
     for (;;) { 
       vTaskDelay(3); 
-      MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
-      xLastWakeTime = xTaskGetTickCount();  
+      if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+      {
+        MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
+        xSemaphoreGive( xIMUFree );
+      }
+      //xLastWakeTime = xTaskGetTickCount();  
     }
 }
+
 static void vSensorTask(void *pvParameters) {
   /*    
     xServo.write(180);
@@ -115,6 +133,20 @@ static void vSensorTask(void *pvParameters) {
     }
 }
 
+
+static void vMotionTask(void *pvParameters) {
+    xLogger.vAddLogMsg("Motion Task started.");
+    for (;;) { 
+      vTaskDelay(50); 
+      if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+      {
+        MpuDrv::Mpu.process();  
+        xSemaphoreGive( xIMUFree );
+      }    
+    }
+}
+
+
 void setup() {
     delay(5000);
     digitalWrite(BOARD_LED_PIN, LOW);
@@ -122,9 +154,10 @@ void setup() {
     pinMode(US_OUT_PIN, OUTPUT);     
     pinMode(US_IN_PIN, INPUT); 
     Serial.begin(115200); 
-    xCommMgr.Init(115200);
     xLogger.Init();
 
+    xCommMgr.Init(115200);
+    
     Serial.println("Init Wire...");
     //Wire.begin(SCL_PIN, SDA_PIN);
     Wire.begin();
@@ -137,6 +170,8 @@ void setup() {
     Serial.println(portTICK_PERIOD_MS);
     
     Serial.println("Starting...");
+
+    vSemaphoreCreateBinary(xIMUFree);
     
     xTaskCreate(vSerialOutTask,
                 "TaskSO",
@@ -156,25 +191,32 @@ void setup() {
                 "TaskSens",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 3, // mid
+                tskIDLE_PRIORITY + 3, // max
                 NULL);
   
     
-    xTaskCreate(vTimerTask,
-                "TaskTmr",
+    xTaskCreate(vLazyTask,
+                "TaskLazy",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 tskIDLE_PRIORITY + 0, // min
                 NULL);
 
                                             
-    xTaskCreate(vRealTimeTask,
-                "TaskRT",
+    xTaskCreate(vIMU_Task,
+                "TaskIMU",
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 tskIDLE_PRIORITY + 3, // max
                 NULL);
-                
+
+    xTaskCreate(vMotionTask,
+                "TaskMotion",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                tskIDLE_PRIORITY + 2, // med
+                NULL);
+                            
     vTaskStartScheduler();
 }
 
