@@ -6,7 +6,7 @@ void isr(void)  {  count++;  }
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200); 
-  pinMode(PB8, INPUT);
+  pinMode(PB8, INPUT_PULLUP);
   attachInterrupt(PB8, isr, FALLING);
 }
 

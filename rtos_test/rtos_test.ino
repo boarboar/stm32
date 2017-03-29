@@ -23,6 +23,20 @@ Servo xServo;
 
 xSemaphoreHandle xIMUFree;
 
+int count=0;
+
+void isr(void)  {  
+  /* Declared static to minimize stack use. */
+  static portBASE_TYPE xHigherPriorityTaskWoken;
+  xHigherPriorityTaskWoken = pdFALSE;
+
+    // should be locked!
+    
+  count++;  
+
+  portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+ }
+
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
@@ -81,10 +95,13 @@ static void vLazyTask(void *pvParameters) {
         } 
 
         int yaw_i = yaw*180.0/PI;
-        char buf[20];
+        char buf[32];
         
         strcpy(buf, "YAW: ");
         itoa_cat(yaw_i, buf);
+        strcat(buf, " C: ");
+        itoa_cat(count, buf);
+        
         xLogger.vAddLogMsg(buf);  
     }
 }
@@ -172,6 +189,9 @@ void setup() {
     
     Serial.println("Starting...");
 
+    pinMode(PB8, INPUT_PULLUP);
+    attachInterrupt(PB8, isr, FALLING);
+  
     vSemaphoreCreateBinary(xIMUFree);
     
     xTaskCreate(vSerialOutTask,
