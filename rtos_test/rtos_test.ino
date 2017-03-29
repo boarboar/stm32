@@ -190,7 +190,7 @@ void setup() {
     Serial.println("Starting...");
 
     pinMode(PB8, INPUT_PULLUP);
-    attachInterrupt(PB8, isr, FALLING);
+    attachInterrupt(PB8, isr, CHANGE);
   
     vSemaphoreCreateBinary(xIMUFree);
     
