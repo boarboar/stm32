@@ -65,35 +65,27 @@ boolean CommManager::ReadSerialCommand()
 // list := '[' int [,] ... ']'
 boolean CommManager::ProcessCommand()
 {
+  *msgdbg=0;  
   // check crc
-  uint8_t crc=0, i;
-  pos=0;
-  
-  while(buf[pos] && buf[pos]!='%')
-    {      
-      crc = crc ^ buf[pos];
-      for (i=0; i<8; i++) {
-        if (crc & 1) {
-            crc = (crc >> 1) ^0x8c;
-        }
-        else {
-            crc = (crc >> 1);
-        }
-      }
-      pos++;
-    }
+  uint8_t crc=CRC();
 
   if(buf[pos]=='%') {
     pos++;
     while(isspace(buf[pos])) pos++;
     uint8_t mcrc=(uint8_t)ReadInt();    
+    /*
     if(crc==mcrc) Serial3.println("CRC OK");
     else {
       Serial3.print("CRC FAIL ");
       Serial3.print(crc);
       Serial3.print(" ");
       Serial3.println(mcrc);
-    }
+    }*/
+    if(crc!=mcrc) {
+      Serial3.println("R -1");
+      strcpy(msgdbg, "CRC FAIL");
+      return false;    
+    } else strcpy(msgdbg, "% ");
   }
   
   pos=0;
@@ -102,15 +94,15 @@ boolean CommManager::ProcessCommand()
     case 'g': 
       verb='G';
     case 'G': // get cmd 
-      strcpy(rsp, "G");
+      strcat(msgdbg, "G");
       break;
     case 's':  
       verb='S'; 
     case 'S': // get cmd 
-      strcpy(rsp, "S");
+      strcat(msgdbg, "S");
       break;
     default:  
-      strcpy(buf, "BAD CMD");
+      strcat(msgdbg, "BAD CMD");
       Serial3.println("R -1");
       return false;
   }
@@ -119,22 +111,24 @@ boolean CommManager::ProcessCommand()
   
   pos=1;
   reg=ReadInt();
-  if(reg==0) {
-      strcpy(buf, "BAD REG");
-      Serial3.println("R -2");
-      return false;
+  if(reg==0) {    
+    Serial3.println("R -2");      
+    strcat(msgdbg, " BAD REG");    
+    return false;
   }
-  strcat(rsp, " ");
-  //itoa(reg, bufn);
-  //strcat(rsp, bufn);
-  itoa_cat(reg, rsp);
+  
+  strcat(msgdbg, " ");
+  itoa_cat(reg, msgdbg);
 
   // validate reg - TODO
 
   if(verb=='G') {
     // do get - TODO
     // switch ...
-    Serial3.println("R 0,777");
+    strcpy(buf, "R 0,777%");
+    crc=CRC();
+    itoa_cat(crc, buf);
+    Serial3.println(buf);
     return true;
   }
 
@@ -166,15 +160,13 @@ boolean CommManager::ProcessCommand()
         while(isspace(buf[pos])) pos++;     
         if(buf[pos]==',') pos++;
     }     
-    strcat(rsp, " [@");    
-    //itoa(vcnt, rsp+strlen(rsp));    
-    itoa_cat(vcnt, rsp);    
+    strcat(msgdbg, " [@");    
+    itoa_cat(vcnt, msgdbg);    
   } else {
     vcnt=1;
     val[0]=ReadInt();
-    strcat(rsp, " ");
-    //itoa(val[0], rsp+strlen(rsp));     
-    itoa_cat(val[0], rsp);
+    strcat(msgdbg, " ");
+    itoa_cat(val[0], msgdbg);
   }
 
   // do set 
@@ -204,17 +196,38 @@ int16_t CommManager::ReadInt() {
   return val;
 }
 
+uint8_t CommManager::CRC()
+{
+  uint8_t crc=0, i;
+  pos=0;
+  while(buf[pos] && buf[pos]!='%')
+    {      
+      crc = crc ^ buf[pos];
+      for (i=0; i<8; i++) {
+        if (crc & 1) {
+            crc = (crc >> 1) ^0x8c;
+        }
+        else {
+            crc = (crc >> 1);
+        }
+      }
+      pos++;
+    }
+  return crc;
+}  
+    
 const char *CommManager::GetBuffer() {
   return buf;
 }
 
 const char *CommManager::GetDbgBuffer() {
-  return rsp;
+  return msgdbg;
 }
 
 void CommManager::Complete() {
   bytes=0;
-  buf[bytes]=0;
+  *buf=0;
+  *msgdbg=0;
   verb=reg=vcnt=0;
 }
 

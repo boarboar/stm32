@@ -17,22 +17,29 @@
 #define US_IN_PIN   PB13
 #define US_OUT_PIN  PB12
 
+#define ENC_IN_PIN  PB8
+
 CommManager xCommMgr;
 ComLogger xLogger;
 Servo xServo;
 
 xSemaphoreHandle xIMUFree;
 
-int count=0;
+int enc_count=0;
+uint8_t enc_prev;
 
-void isr(void)  {  
+void vEncoderISR(void)  {  
   /* Declared static to minimize stack use. */
   static portBASE_TYPE xHigherPriorityTaskWoken;
   xHigherPriorityTaskWoken = pdFALSE;
 
-    // should be locked!
-    
-  count++;  
+  uint8_t v=digitalRead(ENC_IN_PIN);
+  if (v==enc_prev) return;
+  enc_prev=v;
+
+       // should be locked!
+ 
+  enc_count++;  
 
   portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
  }
@@ -53,7 +60,7 @@ static void vCommTask(void *pvParameters) {
           digitalWrite(BOARD_LED_PIN, HIGH);        
           xLogger.vAddLogMsg(xCommMgr.GetBuffer());    
           xCommMgr.ProcessCommand();
-          xLogger.vAddLogMsg(xCommMgr.GetDbgBuffer());  // response        
+          xLogger.vAddLogMsg(xCommMgr.GetDbgBuffer());  // debug        
           xCommMgr.Complete();
           //xCommMgr.Respond(xCmd.GetResponce());          
           digitalWrite(BOARD_LED_PIN, LOW);
@@ -100,7 +107,7 @@ static void vLazyTask(void *pvParameters) {
         strcpy(buf, "YAW: ");
         itoa_cat(yaw_i, buf);
         strcat(buf, " C: ");
-        itoa_cat(count, buf);
+        itoa_cat(enc_count, buf);
         
         xLogger.vAddLogMsg(buf);  
     }
@@ -131,8 +138,7 @@ static void vSensorTask(void *pvParameters) {
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(10000);
-        //vAddLogMsg("SENS");        
-        //uint32_t t0 = millis();  
+        // move it to its class
         TickType_t t=xTaskGetTickCount();
         digitalWrite(US_OUT_PIN, LOW);
         delayMicroseconds(2);
@@ -161,6 +167,7 @@ static void vMotionTask(void *pvParameters) {
         MpuDrv::Mpu.process();  
         xSemaphoreGive( xIMUFree );
       }    
+      MpuDrv::Mpu.flushAlarms();
     }
 }
 
@@ -189,8 +196,9 @@ void setup() {
     
     Serial.println("Starting...");
 
-    pinMode(PB8, INPUT_PULLUP);
-    attachInterrupt(PB8, isr, CHANGE);
+    pinMode(ENC_IN_PIN, INPUT_PULLUP);
+    enc_prev=digitalRead(ENC_IN_PIN);
+    attachInterrupt(ENC_IN_PIN, vEncoderISR, CHANGE);
   
     vSemaphoreCreateBinary(xIMUFree);
     

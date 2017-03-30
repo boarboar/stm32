@@ -245,7 +245,7 @@ void MpuDrv::resetIntegrator() {
 void MpuDrv::process() {
   Quaternion q, q0;
   VectorFloat gravity;    
-  char buf[20];
+  //char buf[20];
   mpu.dmpGetQuaternion(&q, q16);
   mpu.dmpGetQuaternion(&q0, q16_0);
   q0=q0.getConjugate();
@@ -253,19 +253,27 @@ void MpuDrv::process() {
   mpu.dmpGetGravity(&gravity, &q);
   mpu.dmpGetYawPitchRoll(ypr, &q, &gravity); 
 
-  // flush alarms
+  //copy alarms for fludhing
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
-    if(fail_cnt[i]) {
-      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CYCLE+i, fail_cnt[i]);        
-      strcpy(buf, "MPF ");
-      itoa_cat(i, buf); strcat(buf, ",");
-      itoa_cat(fail_cnt[i], buf); 
-      xLogger.vAddLogMsg(buf);
-      fail_cnt[i]=0;
-    }
+    fail_cnt_buf[i]=fail_cnt[i];
+    fail_cnt[i]=0;
   }
 }
 
+void MpuDrv::flushAlarms() {
+  // flush alarms
+  static char buf[20]; // save stack
+  for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
+    if(fail_cnt_buf[i]) {
+      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CYCLE+i, fail_cnt[i]);        
+      strcpy(buf, "MPF ");
+      itoa_cat(i, buf); strcat(buf, ",");
+      itoa_cat(fail_cnt_buf[i], buf); 
+      xLogger.vAddLogMsg(buf);
+    }
+  }
+}
+  
 float MpuDrv::getYaw() { return ypr[0]; }
 
 void MpuDrv::getAll(float* ypr, float* af, float* vf) {        

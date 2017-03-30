@@ -10,10 +10,13 @@ class CommManager {
     const char *GetBuffer();
     const char *GetDbgBuffer();
     boolean ProcessCommand();
-    int16_t ReadInt() ;    
+    
   protected:
+    uint8_t CRC();
+    int16_t ReadInt() ;    
+    
     char buf[CM_BUF_SIZE];
-    char rsp[CM_BUF_SIZE];
+    char msgdbg[CM_BUF_SIZE];
     //char bufn[16];
     uint8_t bytes;
     uint8_t pos;

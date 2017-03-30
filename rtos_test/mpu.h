@@ -34,6 +34,7 @@ public:
   void getAll(float* ypr, float* af, float* vf);  
   void resetIntegrator();
   void process();
+  void flushAlarms();
   float getYaw();
   static void DbgPrintVectorInt16(const char *s, VectorInt16 *v);
   static void DbgPrintQInt16(const char *s, int16_t *q);
@@ -48,6 +49,7 @@ protected:
   uint8_t data_ready;
   uint8_t need_reset;
   uint8_t fail_cnt[MPU_FAIL_CNT_SZ];
+  uint8_t fail_cnt_buf[MPU_FAIL_CNT_SZ];
   uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
   uint16_t fifoCount;     // count of all bytes currently in FIFO
   uint8_t fifoBuffer[64]; // FIFO storage buffer
