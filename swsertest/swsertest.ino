@@ -3,12 +3,12 @@
 
 SoftwareSerial swSer(12, 13, false, 256);
 
-uint8_t docrc(char *buf) {
+uint8_t crc(char *buf) {
   // check crc
   uint8_t crc=0, i;
   uint8_t pos=0;
   
-  while(buf[pos])
+  while(buf[pos] && buf[pos]!='%')
     {      
       crc = crc ^ buf[pos];
       for (i=0; i<8; i++) {
@@ -30,6 +30,8 @@ void setup() {
   Serial.begin(115200);
   swSer.begin(115200);
 
+  while (swSer.available() > 0)  swSer.read();
+
   Serial.println("\nSoftware serial test started");
 /*
   for (char ch = ' '; ch <= 'z'; ch++) {
@@ -49,25 +51,49 @@ void loop() {
     swSer.write(Serial.read());
   }
 */
-delay(1000);
+delay(5000);
 char buf[20];
-strcpy(buf, "G 1");
-swSer.print(buf);
-swSer.print("%");
-swSer.println(docrc(buf));
+strcpy(buf, "G 1%");
+Serial.println(buf);
 
-while (swSer.available() > 0) {
-    Serial.write(swSer.read());
-  }
+
+  while (swSer.available() > 0)  swSer.read();
   
-delay(1000);
-
-strcpy(buf, "S 1,[2,34]");
 swSer.print(buf);
-swSer.print("%");
-swSer.println(docrc(buf));
+swSer.println(crc(buf));
+*buf=0;
+int i=0;
+while (!swSer.available())  {}
 
 while (swSer.available() > 0) {
-    Serial.write(swSer.read());
+    buf[i]=swSer.read();
+    Serial.write(buf[i]);
+    i++;
   }
+buf[i]=0;
+Serial.println(crc(buf));  
+
+delay(5000);
+
+strcpy(buf, "S 1,[2,34]%");
+Serial.println(buf);
+
+
+  while (swSer.available() > 0)  swSer.read();
+  
+swSer.print(buf);
+swSer.println(crc(buf));
+
+*buf=0;
+i=0;
+
+while (!swSer.available())  {}
+
+while (swSer.available() > 0) {
+    buf[i]=swSer.read();
+    Serial.write(buf[i]);
+    i++;
+  }
+buf[i]=0;
+
 }

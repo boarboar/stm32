@@ -26,9 +26,9 @@ boolean CommManager::ReadSerialCommand()
       if (bytes > 0) { 
         buf[bytes]=0; 
         
-        Serial3.print("CMDOK[ ");
-        Serial3.print(buf);
-        Serial3.print(" ]");
+        //Serial3.print("CMDOK[ ");
+        //Serial3.print(buf);
+        //Serial3.print(" ]");
 /*
         if(buf[0]=='U') {
           Serial3.println("trying to decode...");
@@ -129,6 +129,8 @@ boolean CommManager::ProcessCommand()
     crc=CRC();
     itoa_cat(crc, buf);
     Serial3.println(buf);
+    strcat(msgdbg, "->");
+    strcat(msgdbg, buf);
     return true;
   }
 
