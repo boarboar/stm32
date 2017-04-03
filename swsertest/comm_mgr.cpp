@@ -30,6 +30,8 @@ bool CommManager::Command(char *cmd, int16_t timeout)
   swSer.println(buf);
   long t=millis();
   boolean res=false;
+  bytes=0;   
+  buf[bytes]=0; 
   while (!res && millis()<t+timeout && bytes<CM_BUF_SIZE)
   {
     while(!res && swSer.available()) 
