@@ -1,4 +1,6 @@
 
+#include "comm_mgr.h"
+/*
 #include <SoftwareSerial.h>
 
 SoftwareSerial swSer(12, 13, false, 256);
@@ -24,25 +26,32 @@ uint8_t crc(char *buf) {
 
  return crc;
 }   
+  */
+
+CommManager cmgr;
     
 void setup() {
   delay(2000);
   Serial.begin(115200);
+
+  cmgr.Init();
+
+  /*
   swSer.begin(115200);
 
   while (swSer.available() > 0)  swSer.read();
 
   Serial.println("\nSoftware serial test started");
-/*
-  for (char ch = ' '; ch <= 'z'; ch++) {
-    swSer.write(ch);
-  }
-  swSer.println("");
 */
 
 }
 
 void loop() {
+  delay(5000);
+  cmgr.Command("G 1");
+  delay(5000);
+  cmgr.Command("S 1,[2,34]");
+
   /*
   while (swSer.available() > 0) {
     Serial.write(swSer.read());
@@ -51,6 +60,7 @@ void loop() {
     swSer.write(Serial.read());
   }
 */
+/*
 delay(5000);
 char buf[20];
 strcpy(buf, "G 1%");
@@ -95,5 +105,6 @@ while (swSer.available() > 0) {
     i++;
   }
 buf[i]=0;
+*/
 
 }
