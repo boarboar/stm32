@@ -35,6 +35,7 @@ int16_t MpuDrv::init() {
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) fail_cnt[i]=0;
   resetIntegrator();
   xLogger.vAddLogMsg("Init I2C dev...");
+   
   mpu.initialize();
   // verify connection
   xLogger.vAddLogMsg("Test device conn...");

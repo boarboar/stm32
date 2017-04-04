@@ -1,6 +1,7 @@
 #include <MapleFreeRTOS821.h>
 #include "log.h"
 
+
 void ComLogger::Init() {
     vSemaphoreCreateBinary(xLogFree);
     xLogQueue = xQueueCreate( CLOG_Q_SZ, sizeof( struct AMessage ) );

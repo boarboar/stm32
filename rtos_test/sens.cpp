@@ -1,5 +1,8 @@
 #include <MapleFreeRTOS821.h>
 #include "sens.h"
+#include "log.h"
+
+extern ComLogger xLogger;
 
 void Sensor::Init(int sens_in_pin, int sens_out_pin, int servo_pin) {
     this->sens_in_pin=sens_in_pin;
@@ -24,6 +27,16 @@ void Sensor::Do() {
     {
       if(d>0) value=(int16_t)(d/58);
       else value = -2;
+/*
+      char buf[32];
+        
+        
+        strcpy(buf, "SENS: ");
+
+        itoa_cat(value, buf);
+        
+        xLogger.vAddLogMsg(buf);  
+        */
       xSemaphoreGive( xSensFree );
     }
 }
@@ -35,5 +48,6 @@ int16_t Sensor::Get() {
       ret = value;
       xSemaphoreGive( xSensFree );
     }
+  return ret;
 }
 

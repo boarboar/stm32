@@ -105,11 +105,12 @@ static void vLazyTask(void *pvParameters) {
         float yaw=0.0;
         bool mpu_rst=false;
         if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-        {
+        {/*
           if(MpuDrv::Mpu.isNeedReset())  {
             MpuDrv::Mpu.init();
             mpu_rst=true;
-          } else yaw = MpuDrv::Mpu.getYaw(); 
+          } else */
+          yaw = MpuDrv::Mpu.getYaw(); 
           xSemaphoreGive( xIMUFree );
         } 
         
@@ -131,14 +132,20 @@ static void vLazyTask(void *pvParameters) {
 static void vIMU_Task(void *pvParameters) {
     int16_t mpu_res;    
     xLogger.vAddLogMsg("IMU Task started.");
-    MpuDrv::Mpu.init();
+    /*
+    if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE ) 
+    {
+      MpuDrv::Mpu.init();
+      xSemaphoreGive( xIMUFree );
+     } 
+     */
     TickType_t xLastWakeTime=xTaskGetTickCount();
     for (;;) { 
       vTaskDelay(3); 
       mpu_res=-20;
       if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
       {
-        int16_t mpu_res = MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
+        mpu_res = MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
         xLastWakeTime=xTaskGetTickCount();
         xSemaphoreGive( xIMUFree );
       }      
@@ -210,7 +217,7 @@ void setup() {
     Serial.println("Init Wire...");
     //Wire.begin(SCL_PIN, SDA_PIN);
     Wire.begin();
-    //MpuDrv::Mpu.init();
+    MpuDrv::Mpu.init();
      
     //Serial.println("Init Servo...");
     //xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object 
