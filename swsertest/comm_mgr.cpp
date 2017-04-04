@@ -10,18 +10,44 @@ inline void ltoa_cat(int n, char s[]) { ltoa(n, s+strlen(s)); }
 
 SoftwareSerial swSer(12, 13, false, 256);
  
-void CommManager::Init(uint32_t comm_speed) {
+void CommManager::Init(uint32_t comm_speed, int16_t timeout) {
   bytes = 0;
   buf[bytes] = 0;
+  this->timeout=timeout;
   swSer.begin(comm_speed);
   while (swSer.available() > 0)  swSer.read();
   Serial.println("\nSoftware serial started");
 }
 
-// read serial data into buffer
-bool CommManager::Command(char *cmd, int16_t timeout)
+bool CommManager::Get(uint16_t reg) {
+  if(reg==0) return false;
+  strcpy(buf, "G ");
+  itoa_cat(reg, buf);
+  return Command(NULL);  
+}
+
+bool CommManager::Set(uint16_t reg, int16_t *va, uint16_t nval) 
+{
+  if(reg==0 || NULL==va || nval==0) return false;
+  strcpy(buf, "S ");
+  itoa_cat(reg, buf);
+  strcat(buf, ",");
+  if(nval==1) itoa_cat(*va, buf);
+  else {
+    strcat(buf, "[");
+    for(uint8_t i=0; i<nval; i++) {
+      itoa_cat(va[i], buf);
+      if(i<nval-1) strcat(buf, ",");
+    }
+    strcat(buf, "]");
+  }
+  return Command(NULL);  
+}
+    
+    
+bool CommManager::Command(char *cmd)
 {  
-  strcpy(buf, cmd);
+  if(NULL!=cmd) strcpy(buf, cmd);
   strcat(buf, "%");
   itoa_cat(CRC(), buf);
   Serial.print(">");
@@ -30,9 +56,10 @@ bool CommManager::Command(char *cmd, int16_t timeout)
   swSer.println(buf);
   long t=millis();
   boolean res=false;
+  resp_val=-100;
   bytes=0;   
   buf[bytes]=0; 
-  while (!res && millis()<t+timeout && bytes<CM_BUF_SIZE)
+  while (!res && millis()<t+timeout && bytes<CM_BUF_SIZE) // WRAPAROUND!!!
   {
     while(!res && swSer.available()) 
     {
@@ -78,7 +105,54 @@ bool CommManager::Command(char *cmd, int16_t timeout)
     } 
   }
   pos=0;
+  while(isspace(buf[pos])) pos++;
+  if(buf[pos]!='R') {
+    Serial.println("SYNTAX FAIL");
+    return false;    
+  }
 
+  while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
+
+  if(!buf[pos]) {
+    Serial.println("SYNTAX FAIL");
+    return false;
+  }
+
+  resp_val = ReadInt();
+
+  if(resp_val) {
+    Serial.println("BAD CODE");
+    return false;
+  }
+
+  while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
+
+  if(buf[pos]=='[') {
+    // array    
+    vcnt=0;
+    pos++;
+    while(1) { 
+        while(isspace(buf[pos])) pos++;     
+        if(!buf[pos]) {
+          Serial.println("SYNTAX FAIL");
+          return false;
+        }
+        if(buf[pos]==']') break;        
+        val[vcnt]=ReadInt(); // add to array
+        vcnt++;
+        if(vcnt>CM_NVAL) {
+          // too many vals
+          Serial.println("SYNTAX FAIL");
+          return false;
+        }        
+        while(isspace(buf[pos])) pos++;     
+        if(buf[pos]==',') pos++;
+    }        
+  } else {
+    vcnt=1;
+    val[0]=ReadInt();    
+  }
+  
   Serial.print("OK (");
   Serial.print(millis()-t);
   Serial.println(" ms) ");
