@@ -14,7 +14,7 @@ extern ComLogger xLogger;
 MpuDrv MpuDrv::Mpu; // singleton
 
 MpuDrv::MpuDrv() : dmpStatus(ST_0) {
-  vSemaphoreCreateBinary(xIMUFree);    
+  //vSemaphoreCreateBinary(xIMUFree);    
   }
 
 int8_t MpuDrv::getStatus() { return dmpStatus; }
@@ -63,6 +63,7 @@ int16_t MpuDrv::init(uint16_t intrp) {
 */
 
 int16_t MpuDrv::init() {
+  vSemaphoreCreateBinary(xIMUFree);    
   dmpStatus=ST_0;
   data_ready=0;
   fifoCount=0;

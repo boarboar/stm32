@@ -2,6 +2,10 @@
 #include <SoftwareSerial.h>
 #include "comm_mgr.h"
 
+
+//<R 0,94%159
+//1 : 0 
+
 void itoa(int n, char s[]);
 void ltoa(int32_t n, char s[]);
 
