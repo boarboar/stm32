@@ -17,6 +17,8 @@ void Sensor::Init(int sens_in_pin, int sens_out_pin, int servo_pin) {
 
 
 void Sensor::Do() {
+      //xServo.write(180);
+
     digitalWrite(sens_out_pin, LOW);
     delayMicroseconds(2);
     digitalWrite(sens_out_pin, HIGH);

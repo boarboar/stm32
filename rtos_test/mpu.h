@@ -24,8 +24,12 @@ class MpuDrv {
   enum FailCountIdx { MPU_FAIL_NODATA_IDX=0, MPU_FAIL_FIFOOVFL_IDX=1, MPU_FAIL_FIFOTMO_IDX=2, MPU_FAIL_FIFOEXCESS_IDX=3 };
 public:
   static MpuDrv Mpu; // singleton  
-  int16_t init(/*uint16_t sda, uint16_t sdl,*/ uint16_t intr);
+  //int16_t init(/*uint16_t sda, uint16_t sdl,*/ uint16_t intr);
   int16_t init();
+  int16_t cycle_safe();
+  void process_safe();
+  float getYaw_safe();
+  
   int16_t cycle(uint16_t dt);
   int8_t getStatus();
   uint8_t isDataReady();
@@ -67,6 +71,8 @@ protected:
   /*
   volatile uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
   */
+  xSemaphoreHandle xIMUFree;
+  TickType_t xLastWakeTime;
 };
 
 #endif /* _UMP_MPU_H_ */

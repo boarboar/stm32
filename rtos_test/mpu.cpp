@@ -13,16 +13,54 @@ extern ComLogger xLogger;
 
 MpuDrv MpuDrv::Mpu; // singleton
 
-MpuDrv::MpuDrv() : dmpStatus(ST_0) {}
+MpuDrv::MpuDrv() : dmpStatus(ST_0) {
+  vSemaphoreCreateBinary(xIMUFree);    
+  }
 
 int8_t MpuDrv::getStatus() { return dmpStatus; }
 uint8_t MpuDrv::isDataReady() { return dmpStatus==ST_READY && data_ready; }
 uint8_t MpuDrv::isNeedReset() { return need_reset; }
 void    MpuDrv::needReset() {  need_reset=true; }
 
-int16_t MpuDrv::init(uint16_t /*intrp*/) {
+int16_t MpuDrv::cycle_safe() 
+{
+  int16_t res=-20;
+  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+      {
+        res = cycle(xTaskGetTickCount()-xLastWakeTime);          
+        xLastWakeTime=xTaskGetTickCount();
+        xSemaphoreGive( xIMUFree );
+      } 
+  return res;      
+}
+
+void MpuDrv::process_safe() 
+{
+  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+      {
+        process();          
+        xSemaphoreGive( xIMUFree );
+      } 
+}
+
+float MpuDrv::getYaw_safe() 
+{
+  float yaw=0.0f;
+  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+      {
+        yaw = getYaw();          
+        xSemaphoreGive( xIMUFree );
+      } 
+  return yaw;    
+}
+
+
+  
+/*
+int16_t MpuDrv::init(uint16_t intrp) {
   return init();
 }
+*/
 
 int16_t MpuDrv::init() {
   dmpStatus=ST_0;
@@ -189,6 +227,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
       xLogger.vAddLogMsg("MPU converged");
       start=micros();
       dmpStatus=ST_READY;        
+      xLastWakeTime=xTaskGetTickCount();
       //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_EVENT, MPU_FAIL_CONVTMO, "IMU_CVT_OK");  
      }
   } // warmup

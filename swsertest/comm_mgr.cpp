@@ -9,7 +9,15 @@ inline void itoa_cat(int n, char s[]) { itoa(n, s+strlen(s)); }
 inline void ltoa_cat(int n, char s[]) { ltoa(n, s+strlen(s)); }
 
 SoftwareSerial swSer(12, 13, false, 256);
- 
+
+int CommManager::GetResultCnt() {
+  return vcnt;  
+}
+
+const int16_t *CommManager::GetResultVal() {
+  return val;
+}
+
 void CommManager::Init(uint32_t comm_speed, int16_t timeout) {
   bytes = 0;
   buf[bytes] = 0;
@@ -19,16 +27,16 @@ void CommManager::Init(uint32_t comm_speed, int16_t timeout) {
   Serial.println("\nSoftware serial started");
 }
 
-bool CommManager::Get(uint16_t reg) {
-  if(reg==0) return false;
+int CommManager::Get(uint16_t reg) {
+  if(reg==0) return -7;
   strcpy(buf, "G ");
   itoa_cat(reg, buf);
   return Command(NULL);  
 }
 
-bool CommManager::Set(uint16_t reg, int16_t *va, uint16_t nval) 
+int CommManager::Set(uint16_t reg, int16_t *va, uint16_t nval) 
 {
-  if(reg==0 || NULL==va || nval==0) return false;
+  if(reg==0 || NULL==va || nval==0) return -7;
   strcpy(buf, "S ");
   itoa_cat(reg, buf);
   strcat(buf, ",");
@@ -45,7 +53,7 @@ bool CommManager::Set(uint16_t reg, int16_t *va, uint16_t nval)
 }
     
     
-bool CommManager::Command(char *cmd)
+int CommManager::Command(char *cmd)
 {  
   if(NULL!=cmd) strcpy(buf, cmd);
   strcat(buf, "%");
@@ -59,6 +67,7 @@ bool CommManager::Command(char *cmd)
   resp_val=-100;
   bytes=0;   
   buf[bytes]=0; 
+  vcnt=0;
   while (!res && millis()<t+timeout && bytes<CM_BUF_SIZE) // WRAPAROUND!!!
   {
     while(!res && swSer.available()) 
@@ -78,15 +87,15 @@ bool CommManager::Command(char *cmd)
   }
   
   if(bytes>=CM_BUF_SIZE) { 
-    Serial.println("OVERFLOW");
+    //Serial.println("OVERFLOW");
     bytes=0; //overflow, probably caused hang up at start...    
     buf[bytes]=0; 
-    return false;     
+    return -2;     
   }
 
   if(!res) {
-    Serial.println("TIMEOUT");
-    return false;
+    //Serial.println("TIMEOUT");
+    return -1;
   }
 
   
@@ -100,29 +109,29 @@ bool CommManager::Command(char *cmd)
     while(isspace(buf[pos])) pos++;
     uint8_t mcrc=(uint8_t)ReadInt();    
     if(crc!=mcrc) {
-      Serial.println("CRC FAIL");
-      return false;    
+      //Serial.println("CRC FAIL");
+      return -3;    
     } 
   }
   pos=0;
   while(isspace(buf[pos])) pos++;
   if(buf[pos]!='R') {
-    Serial.println("SYNTAX FAIL");
-    return false;    
+    //Serial.println("SYNTAX FAIL");
+    return -7;    
   }
 
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
 
   if(!buf[pos]) {
-    Serial.println("SYNTAX FAIL");
-    return false;
+    //Serial.println("SYNTAX FAIL");
+    return -7;
   }
 
   resp_val = ReadInt();
 
   if(resp_val) {
-    Serial.println("BAD CODE");
-    return false;
+    //Serial.println("BAD CODE");
+    return -6;
   }
 
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
@@ -134,16 +143,16 @@ bool CommManager::Command(char *cmd)
     while(1) { 
         while(isspace(buf[pos])) pos++;     
         if(!buf[pos]) {
-          Serial.println("SYNTAX FAIL");
-          return false;
+          //Serial.println("SYNTAX FAIL");
+          return -7;
         }
         if(buf[pos]==']') break;        
         val[vcnt]=ReadInt(); // add to array
         vcnt++;
         if(vcnt>CM_NVAL) {
           // too many vals
-          Serial.println("SYNTAX FAIL");
-          return false;
+          //Serial.println("SYNTAX FAIL");
+          return -7;
         }        
         while(isspace(buf[pos])) pos++;     
         if(buf[pos]==',') pos++;
@@ -153,11 +162,11 @@ bool CommManager::Command(char *cmd)
     val[0]=ReadInt();    
   }
   
-  Serial.print("OK (");
-  Serial.print(millis()-t);
-  Serial.println(" ms) ");
+  //Serial.print("OK (");
+  //Serial.print(millis()-t);
+  //Serial.println(" ms) ");
   
-  return true;
+  return 0;
 }
 
 

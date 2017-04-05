@@ -17,23 +17,27 @@
 
 #define SERVO_1_PIN PA8 //PWM
 
-// need FT ports!
-#define US_IN_PIN   PB13
-#define US_OUT_PIN  PB12
-
-#define ENC1_IN_PIN  PB8
-#define ENC2_IN_PIN  PB9
-
 #define MOTOR_EN_1_PIN PA1
 #define MOTOR_EN_2_PIN PA2
 
+// need FT ports!
+#define ENC1_IN_PIN  PB8
+#define ENC2_IN_PIN  PB9
+
+#define US_IN_1_PIN   PB13
+#define US_OUT_1_PIN  PB12
+
+#define US_IN_2_PIN   PB4
+#define US_OUT_2_PIN  PB3
+
+// 
+
+
 CommManager xCommMgr;
 ComLogger xLogger;
-//Servo xServo;
-
 Sensor xSensor;
 
-xSemaphoreHandle xIMUFree;
+//xSemaphoreHandle xIMUFree;
 
 int enc_count=0;
 uint8_t enc_prev;
@@ -79,9 +83,9 @@ static void vCommTask(void *pvParameters) {
 }
 
 static void vLazyTask(void *pvParameters) {
-    TickType_t xLastWakeTime;
-    int i;
-    int i1, i10, i100;
+    //TickType_t xLastWakeTime;
+    //int i;
+    //int i1, i10, i100;
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
       vTaskDelay(1000);
@@ -101,22 +105,22 @@ static void vLazyTask(void *pvParameters) {
         itoa_cat(i100, buf);
         xLogger.vAddLogMsg(buf);    
 */
-
+      /*
         float yaw=0.0;
         bool mpu_rst=false;
         if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-        {/*
-          if(MpuDrv::Mpu.isNeedReset())  {
-            MpuDrv::Mpu.init();
-            mpu_rst=true;
-          } else */
+        {
+          //if(MpuDrv::Mpu.isNeedReset())  {
+          //  MpuDrv::Mpu.init();
+          //  mpu_rst=true;
+          //} else 
           yaw = MpuDrv::Mpu.getYaw(); 
           xSemaphoreGive( xIMUFree );
         } 
-        
+        */
+        float yaw=MpuDrv::Mpu.getYaw_safe(); 
         int val = yaw*180.0/PI;
-        char buf[32];
-        
+        char buf[32];       
         strcpy(buf, "Y: ");
         itoa_cat(val, buf);
         strcat(buf, " C: ");
@@ -132,23 +136,20 @@ static void vLazyTask(void *pvParameters) {
 static void vIMU_Task(void *pvParameters) {
     int16_t mpu_res;    
     xLogger.vAddLogMsg("IMU Task started.");
-    /*
-    if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE ) 
-    {
-      MpuDrv::Mpu.init();
-      xSemaphoreGive( xIMUFree );
-     } 
-     */
-    TickType_t xLastWakeTime=xTaskGetTickCount();
+
+    //TickType_t xLastWakeTime=xTaskGetTickCount();
     for (;;) { 
       vTaskDelay(3); 
+      /*
       mpu_res=-20;
       if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
       {
         mpu_res = MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
         xLastWakeTime=xTaskGetTickCount();
         xSemaphoreGive( xIMUFree );
-      }      
+      } 
+      */
+      mpu_res = MpuDrv::Mpu.cycle_safe();       
       if(mpu_res==2) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
@@ -158,32 +159,10 @@ static void vIMU_Task(void *pvParameters) {
 }
 
 static void vSensorTask(void *pvParameters) {
-  /*    
-    xServo.write(180);
-   */
-    
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(1000);
-        xSensor.Do();
-        /*
-        // move it to its class
-        TickType_t t=xTaskGetTickCount();
-        digitalWrite(US_OUT_PIN, LOW);
-        delayMicroseconds(2);
-        digitalWrite(US_OUT_PIN, HIGH);
-        delayMicroseconds(10);
-        digitalWrite(US_OUT_PIN, LOW);
-        uint32_t d=pulseIn(US_IN_PIN, HIGH, 50000);
-        // if d==0 ...
-        int16_t dist=(int16_t)(d/58);
-        t = xTaskGetTickCount() - t;
-        char buf[32]="US: ";
-        itoa_cat(dist, buf);
-        strcat(buf, " ");
-        itoa_cat((int)t, buf);
-        xLogger.vAddLogMsg(buf);        
-        */
+        xSensor.Do();     
     }
 }
 
@@ -192,11 +171,13 @@ static void vMotionTask(void *pvParameters) {
     xLogger.vAddLogMsg("Motion Task started.");
     for (;;) { 
       vTaskDelay(50); 
+      /*
       if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
       {
         MpuDrv::Mpu.process();  
         xSemaphoreGive( xIMUFree );
-      }    
+      } */
+      MpuDrv::Mpu.process_safe();     
       MpuDrv::Mpu.flushAlarms();
     }
 }
@@ -207,21 +188,16 @@ void setup() {
     digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
     
-    //pinMode(US_OUT_PIN, OUTPUT);     
-    //pinMode(US_IN_PIN, INPUT); 
     Serial.begin(115200); 
     xLogger.Init();
     xCommMgr.Init(115200);
-    xSensor.Init(US_IN_PIN, US_OUT_PIN, SERVO_1_PIN); 
+    xSensor.Init(US_IN_1_PIN, US_OUT_1_PIN, SERVO_1_PIN); 
 
     Serial.println("Init Wire...");
     //Wire.begin(SCL_PIN, SDA_PIN);
     Wire.begin();
     MpuDrv::Mpu.init();
      
-    //Serial.println("Init Servo...");
-    //xServo.attach(SERVO_1_PIN);  // attaches the servo on pin 9 to the servo object 
-
     Serial.print("Tick = ");
     Serial.println(portTICK_PERIOD_MS);
     
@@ -231,7 +207,7 @@ void setup() {
     enc_prev=digitalRead(ENC1_IN_PIN);
     attachInterrupt(ENC1_IN_PIN, vEncoderISR, CHANGE);
   
-    vSemaphoreCreateBinary(xIMUFree);
+    //vSemaphoreCreateBinary(xIMUFree);
     
     xTaskCreate(vSerialOutTask,
                 "TaskSO",

@@ -5,10 +5,11 @@
 class CommManager {
   public:
     void Init(uint32_t comm_speed=115200, int16_t timeout=100);
-    bool Command(char *cmd);
-    bool Get(uint16_t reg);
-    bool Set(uint16_t reg, int16_t *va, uint16_t nval);
-    
+    int Command(char *cmd);
+    int Get(uint16_t reg);
+    int Set(uint16_t reg, int16_t *va, uint16_t nval);
+    int GetResultCnt();
+    const int16_t *GetResultVal();
   protected:
     uint8_t CRC();
     int16_t ReadInt() ;    
@@ -22,7 +23,7 @@ class CommManager {
     uint8_t verb;
     uint8_t reg;
     uint8_t vcnt;
-    uint16_t val[CM_NVAL];
+    int16_t val[CM_NVAL];
    
 };
 

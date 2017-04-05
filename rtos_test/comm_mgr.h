@@ -2,6 +2,8 @@
 #define CM_BUF_SIZE 64
 #define CM_NVAL     2
 
+#define CM_ID 94
+
 class CommManager {
   public:
     void Init(uint32_t comm_speed);
@@ -9,15 +11,13 @@ class CommManager {
     void Complete();
     const char *GetBuffer();
     const char *GetDbgBuffer();
-    boolean ProcessCommand();
-    
+    boolean ProcessCommand();    
   protected:
+    enum Regs {REG_None=0, REG_ID=1, REG_Pow=2};
     uint8_t CRC();
-    int16_t ReadInt() ;    
-    
+    int16_t ReadInt() ;        
     char buf[CM_BUF_SIZE];
     char msgdbg[CM_BUF_SIZE];
-    //char bufn[16];
     uint8_t bytes;
     uint8_t pos;
     uint8_t verb;
