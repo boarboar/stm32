@@ -30,14 +30,10 @@
 #define US_IN_2_PIN   PB4
 #define US_OUT_2_PIN  PB3
 
-// 
-
 
 CommManager xCommMgr;
 ComLogger xLogger;
 Sensor xSensor;
-
-//xSemaphoreHandle xIMUFree;
 
 int enc_count=0;
 uint8_t enc_prev;
@@ -106,18 +102,12 @@ static void vLazyTask(void *pvParameters) {
         xLogger.vAddLogMsg(buf);    
 */
       /*
-        float yaw=0.0;
-        bool mpu_rst=false;
-        if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-        {
-          //if(MpuDrv::Mpu.isNeedReset())  {
-          //  MpuDrv::Mpu.init();
-          //  mpu_rst=true;
-          //} else 
-          yaw = MpuDrv::Mpu.getYaw(); 
-          xSemaphoreGive( xIMUFree );
-        } 
-        */
+        if(MpuDrv::Mpu.isNeedReset())  {
+            MpuDrv::Mpu.init();
+            mpu_rst=true;
+          } else 
+      */
+      
         float yaw=MpuDrv::Mpu.getYaw_safe(); 
         int val = yaw*180.0/PI;
         char buf[32];       
@@ -127,8 +117,7 @@ static void vLazyTask(void *pvParameters) {
         itoa_cat(enc_count, buf);
         strcat(buf, " U: ");
         val=xSensor.Get();
-        itoa_cat(val, buf);
-        
+        itoa_cat(val, buf);        
         xLogger.vAddLogMsg(buf);  
     }
 }
@@ -136,19 +125,8 @@ static void vLazyTask(void *pvParameters) {
 static void vIMU_Task(void *pvParameters) {
     int16_t mpu_res;    
     xLogger.vAddLogMsg("IMU Task started.");
-
-    //TickType_t xLastWakeTime=xTaskGetTickCount();
     for (;;) { 
       vTaskDelay(3); 
-      /*
-      mpu_res=-20;
-      if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        mpu_res = MpuDrv::Mpu.cycle(xTaskGetTickCount()-xLastWakeTime);  
-        xLastWakeTime=xTaskGetTickCount();
-        xSemaphoreGive( xIMUFree );
-      } 
-      */
       mpu_res = MpuDrv::Mpu.cycle_safe();       
       if(mpu_res==2) {
         // IMU settled
@@ -171,12 +149,6 @@ static void vMotionTask(void *pvParameters) {
     xLogger.vAddLogMsg("Motion Task started.");
     for (;;) { 
       vTaskDelay(50); 
-      /*
-      if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        MpuDrv::Mpu.process();  
-        xSemaphoreGive( xIMUFree );
-      } */
       MpuDrv::Mpu.process_safe();     
       MpuDrv::Mpu.flushAlarms();
     }
@@ -207,8 +179,6 @@ void setup() {
     enc_prev=digitalRead(ENC1_IN_PIN);
     attachInterrupt(ENC1_IN_PIN, vEncoderISR, CHANGE);
   
-    //vSemaphoreCreateBinary(xIMUFree);
-    
     xTaskCreate(vSerialOutTask,
                 "TaskSO",
                 configMINIMAL_STACK_SIZE,

@@ -14,7 +14,7 @@ extern ComLogger xLogger;
 MpuDrv MpuDrv::Mpu; // singleton
 
 MpuDrv::MpuDrv() : dmpStatus(ST_0) {
-  //vSemaphoreCreateBinary(xIMUFree);    
+  //vSemaphoreCreateBinary(xIMUFree); // can not do this in constructor!!!    
   }
 
 int8_t MpuDrv::getStatus() { return dmpStatus; }
@@ -63,14 +63,16 @@ int16_t MpuDrv::init(uint16_t intrp) {
 */
 
 int16_t MpuDrv::init() {
+  
   vSemaphoreCreateBinary(xIMUFree);    
+  
   dmpStatus=ST_0;
   data_ready=0;
   fifoCount=0;
   count=0;
   conv_count=0;
   need_reset=0;
-  //fail_reason=0;
+
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) fail_cnt[i]=0;
   resetIntegrator();
   xLogger.vAddLogMsg("Init I2C dev...");
