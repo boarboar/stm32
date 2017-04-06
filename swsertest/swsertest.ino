@@ -12,7 +12,6 @@ void setup() {
 void loop() {
   int resp;
   delay(5000);
-  //cmgr.Command("G 1");
   resp=cmgr.Get(1);
   if(resp==0) 
   {
@@ -33,11 +32,13 @@ void loop() {
     Serial.println(resp);
   }
   delay(5000);
-  //cmgr.Command("S 1,[2,34]");
+  /*
   int16_t vals[]={35, -65};
   resp=cmgr.Set(2, vals, 2);
   if(resp!=0) { 
     Serial.print("Error ");
     Serial.println(resp);
   }
+  */
+  
 }

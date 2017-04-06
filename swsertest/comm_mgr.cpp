@@ -140,6 +140,9 @@ int CommManager::Command(char *cmd)
 
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
 
+  Serial.print(': ');
+  Serial.println(buf+pos);
+
   if(buf[pos]=='[') {
     // array    
     vcnt=0;
