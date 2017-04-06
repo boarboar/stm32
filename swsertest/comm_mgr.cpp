@@ -123,7 +123,8 @@ int CommManager::Command(char *cmd)
     //Serial.println("SYNTAX FAIL");
     return -7;    
   }
-
+  pos++;
+  
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
 
   if(!buf[pos]) {
@@ -139,9 +140,6 @@ int CommManager::Command(char *cmd)
   }
 
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
-
-  Serial.print(': ');
-  Serial.println(buf+pos);
 
   if(buf[pos]=='[') {
     // array    
