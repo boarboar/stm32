@@ -11,8 +11,9 @@ void setup() {
 
 void loop() {
   int resp;
+  for(int ireg=1; ireg<=4; ireg++) {
   delay(5000);
-  resp=cmgr.Get(1);
+  resp=cmgr.Get(ireg);
   if(resp==0) 
   {
     int n=cmgr.GetResultCnt();
@@ -31,8 +32,9 @@ void loop() {
     Serial.print("Error ");
     Serial.println(resp);
   }
-  delay(5000);
+  }
   /*
+  delay(5000);
   int16_t vals[]={35, -65};
   resp=cmgr.Set(2, vals, 2);
   if(resp!=0) { 
