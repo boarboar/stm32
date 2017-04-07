@@ -12,10 +12,15 @@ void Sensor::Init(int sens_in_pin, int sens_out_pin, int servo_pin) {
     pinMode(sens_out_pin, OUTPUT);     
     pinMode(sens_in_pin, INPUT); 
     value=-2;
+    running = false;
     Serial.println("Sensor OK");
 }
 
-
+void Sensor::Start() {
+  xLogger.vAddLogMsg("Sens module run.");
+  running=true;
+}
+  
 void Sensor::Do() {
       //xServo.write(180);
 

@@ -6,23 +6,32 @@
 #include "log.h"
 #include "mpu.h"
 #include "sens.h"
+#include "motor.h"
 
 #define BOARD_LED_PIN PC13
 
+// Serial MCU comm
 #define SER3_TX_PIN PB10
 #define SER3_RX_PIN PB11
 
+// I2C ports fixed
 #define SCL_PIN PB6
 #define SDA_PIN PB7
 
-#define SERVO_1_PIN PA8 //PWM
+// PWM ports (check!)
+#define SERVO_1_PIN PA8 
+#define MOTOR_EN_1_PIN PA1 
+#define MOTOR_EN_2_PIN PA2 
 
-#define MOTOR_EN_1_PIN PA1
-#define MOTOR_EN_2_PIN PA2
+// GPIO
+#define MOTOR_OUT_1_1_PIN PA3
+#define MOTOR_OUT_1_2_PIN PA4
+#define MOTOR_OUT_2_1_PIN PA5
+#define MOTOR_OUT_2_2_PIN PA6
 
-// need FT ports!
-#define ENC1_IN_PIN  PB8
-#define ENC2_IN_PIN  PB9
+// 5v Tolerant ports (check!)
+#define MOTOR_ENC_1_PIN  PB8
+#define MOTOR_ENC_2_PIN  PB9
 
 #define US_IN_1_PIN   PB13
 #define US_OUT_1_PIN  PB12
@@ -34,25 +43,7 @@
 CommManager xCommMgr;
 ComLogger xLogger;
 Sensor xSensor;
-
-int enc_count=0;
-uint8_t enc_prev;
-
-void vEncoderISR(void)  {  
-  /* Declared static to minimize stack use. */
-  static portBASE_TYPE xHigherPriorityTaskWoken;
-  xHigherPriorityTaskWoken = pdFALSE;
-
-  uint8_t v=digitalRead(ENC1_IN_PIN);
-  if (v==enc_prev) return;
-  enc_prev=v;
-
-       // should be locked!
- 
-  enc_count++;  
-
-  portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
- }
+Motor xMotor;
 
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
@@ -79,42 +70,21 @@ static void vCommTask(void *pvParameters) {
 }
 
 static void vLazyTask(void *pvParameters) {
-    //TickType_t xLastWakeTime;
-    //int i;
-    //int i1, i10, i100;
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
-      vTaskDelay(1000);
-      /*
-        i1=i10=i100=0;
-        for(i=0; i<1000; i++) {
-          xLastWakeTime = xTaskGetTickCount();  
-          vTaskDelay(10);
-          xLastWakeTime = xTaskGetTickCount()-xLastWakeTime;
-          if(xLastWakeTime>100) i100++;
-          else if(xLastWakeTime>10) i10++;
-          else i1++;
-        }
-        char buf[32]="T: ";        
-        itoa_cat(i1, buf); strcat(buf, " ");
-        itoa_cat(i10, buf); strcat(buf, " ");
-        itoa_cat(i100, buf);
-        xLogger.vAddLogMsg(buf);    
-*/
-      /*
-        if(MpuDrv::Mpu.isNeedReset())  {
-            MpuDrv::Mpu.init();
-            mpu_rst=true;
-          } else 
-      */
-      
+        vTaskDelay(1000);
         float yaw=MpuDrv::Mpu.getYaw_safe(); 
         int val = yaw*180.0/PI;
+        int16_t enc[2];
         char buf[32];       
         strcpy(buf, "Y: ");
-        itoa_cat(val, buf);
-        strcat(buf, " C: ");
-        itoa_cat(enc_count, buf);
+        itoa_cat(val, buf);        
+        if (xMotor.GetEnc(enc)) {
+          strcat(buf, " C: ");
+          itoa_cat(enc[0], buf);
+          strcat(buf, ", ");
+          itoa_cat(enc[1], buf);
+        }
         strcat(buf, " U: ");
         val=xSensor.Get();
         itoa_cat(val, buf);        
@@ -131,7 +101,8 @@ static void vIMU_Task(void *pvParameters) {
       if(mpu_res==2) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
-        // TODO
+        xSensor.Start();     
+        xMotor.Start();     
       }
     }
 }
@@ -157,28 +128,27 @@ static void vMotionTask(void *pvParameters) {
 
 void setup() {
     delay(5000);
-    digitalWrite(BOARD_LED_PIN, LOW);
+    digitalWrite(BOARD_LED_PIN, HIGH);
     pinMode(BOARD_LED_PIN, OUTPUT);
-    
+      
     Serial.begin(115200); 
+    Serial.print("Tick = ");
+    Serial.println(portTICK_PERIOD_MS);
+    
     xLogger.Init();
     xCommMgr.Init(115200);
     xSensor.Init(US_IN_1_PIN, US_OUT_1_PIN, SERVO_1_PIN); 
+    xMotor.Init(MOTOR_OUT_1_1_PIN, MOTOR_OUT_1_2_PIN, MOTOR_EN_1_PIN, MOTOR_ENC_1_PIN,
+        MOTOR_OUT_2_1_PIN, MOTOR_OUT_2_2_PIN, MOTOR_EN_2_PIN, MOTOR_ENC_2_PIN); 
 
     Serial.println("Init Wire...");
     //Wire.begin(SCL_PIN, SDA_PIN);
     Wire.begin();
     MpuDrv::Mpu.init();
      
-    Serial.print("Tick = ");
-    Serial.println(portTICK_PERIOD_MS);
-    
     Serial.println("Starting...");
-
-    pinMode(ENC1_IN_PIN, INPUT_PULLUP);
-    enc_prev=digitalRead(ENC1_IN_PIN);
-    attachInterrupt(ENC1_IN_PIN, vEncoderISR, CHANGE);
-  
+    digitalWrite(BOARD_LED_PIN, LOW);
+       
     xTaskCreate(vSerialOutTask,
                 "TaskSO",
                 configMINIMAL_STACK_SIZE,
@@ -199,16 +169,7 @@ void setup() {
                 NULL,
                 tskIDLE_PRIORITY + 3, // max
                 NULL);
-  
-    
-    xTaskCreate(vLazyTask,
-                "TaskLazy",
-                configMINIMAL_STACK_SIZE,
-                NULL,
-                tskIDLE_PRIORITY + 0, // min
-                NULL);
-
-                                            
+                  
     xTaskCreate(vIMU_Task,
                 "TaskIMU",
                 configMINIMAL_STACK_SIZE,
@@ -221,6 +182,13 @@ void setup() {
                 configMINIMAL_STACK_SIZE,
                 NULL,
                 tskIDLE_PRIORITY + 2, // med
+                NULL);
+          
+    xTaskCreate(vLazyTask,
+                "TaskLazy",
+                configMINIMAL_STACK_SIZE,
+                NULL,
+                tskIDLE_PRIORITY + 0, // min
                 NULL);
                             
     vTaskStartScheduler();

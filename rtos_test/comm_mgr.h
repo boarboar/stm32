@@ -13,7 +13,7 @@ class CommManager {
     const char *GetDbgBuffer();
     boolean ProcessCommand();    
   protected:
-    enum Regs {REG_None=0, REG_ID=1, REG_Pow=2};
+    enum Regs {REG_None=0, REG_ID=1, REG_SENS=3, REG_ENC=4};
     uint8_t CRC();
     int16_t ReadInt() ;        
     char buf[CM_BUF_SIZE];
@@ -23,7 +23,7 @@ class CommManager {
     uint8_t verb;
     uint8_t reg;
     uint8_t vcnt;
-    uint16_t val[CM_NVAL];
+    int16_t val[CM_NVAL];
 };
 
 

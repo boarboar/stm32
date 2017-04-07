@@ -1,9 +1,13 @@
 #include <MapleFreeRTOS821.h>
 #include "log.h"
+#include "sens.h"
+#include "motor.h"
 #include "comm_mgr.h"
 #include "base64.h"
 
 extern ComLogger xLogger;
+extern Sensor xSensor;
+extern Motor xMotor;
  
 void CommManager::Init(uint32_t comm_speed) {
   bytes = 0;
@@ -111,11 +115,14 @@ boolean CommManager::ProcessCommand()
         vcnt=1;
         val[0]=CM_ID;
         break;
-      case REG_Pow:
-        vcnt=2;
-        val[0]=70;
-        val[1]=-30;
+      case REG_SENS:
+        vcnt=1;
+        val[0]=xSensor.Get();
         break;
+      case REG_ENC:
+        vcnt=2;
+        xMotor.GetEnc(val);        
+        break;  
       default:;
         vcnt=0;
     }
@@ -181,10 +188,7 @@ boolean CommManager::ProcessCommand()
 
   switch(reg) {
     case REG_ID:
-        break;
-    case REG_Pow:
-      // todo
-        break;
+        break;    
     default:;        
   }
   
