@@ -36,10 +36,14 @@ void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin
     
     pinMode(m_1_1_pin, OUTPUT);     
     pinMode(m_1_2_pin, OUTPUT);     
-    pinMode(m_1_enab_pin, OUTPUT);     
+    //pinMode(m_1_enab_pin, OUTPUT);     
     pinMode(m_2_1_pin, OUTPUT);     
     pinMode(m_2_2_pin, OUTPUT);     
-    pinMode(m_2_enab_pin, OUTPUT);     
+    //pinMode(m_2_enab_pin, OUTPUT);     
+
+     pinMode(m_1_enab_pin, PWM); 
+     pinMode(m_2_enab_pin, PWM); 
+    
     
     pinMode(m_1_enc_pin, INPUT_PULLUP);     
     pinMode(m_2_enc_pin, INPUT_PULLUP);     

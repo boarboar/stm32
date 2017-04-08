@@ -45,6 +45,8 @@ ComLogger xLogger;
 Sensor xSensor;
 Motor xMotor;
 
+int ipwm=0;
+
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
@@ -89,6 +91,8 @@ static void vLazyTask(void *pvParameters) {
         val=xSensor.Get();
         itoa_cat(val, buf);        
         xLogger.vAddLogMsg(buf);  
+
+         
     }
 }
 
@@ -122,6 +126,9 @@ static void vMotionTask(void *pvParameters) {
       vTaskDelay(50); 
       MpuDrv::Mpu.process_safe();     
       MpuDrv::Mpu.flushAlarms();
+// test PWM
+      pwmWrite(MOTOR_EN_2_PIN, ipwm);
+      ipwm+=500;
     }
 }
 
