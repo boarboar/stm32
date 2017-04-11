@@ -186,9 +186,14 @@ boolean CommManager::ProcessCommand()
     itoa_cat(val[0], msgdbg);
   }
 
+  //int8_t retcode=0;
   switch(reg) {
     case REG_ID:
         break;    
+    case REG_MOTOR_POWER:
+        if(vcnt<2) { /*retcode=-21;*/ break; }
+        xMotor.SetMotors(val[0], val[1]);
+        break;
     default:;        
   }
   

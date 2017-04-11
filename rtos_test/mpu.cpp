@@ -206,11 +206,13 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    Serial.print(F("Q16 Err:\t")); Serial.print(qe); Serial.print(F("\tA16 Err:\t")); Serial.print(ae); 
    Serial.print("\tCC:\t"); Serial.print(conv_count); Serial.print("\tT:\t"); Serial.println((millis()-start)/1000);
         */
+        /*
    char buf[36];
    strcpy(buf, "QE: "); itoa_cat(qe, buf);     
    strcat(buf, " AE: "); itoa_cat(ae, buf);   
    xLogger.vAddLogMsg(buf);
-     
+     */
+   xLogger.vAddLogMsg("QE", qe, "AE", ae);  
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
       conv_count++;
       if((millis()-start)/1000 > INIT_PERIOD_MIN && conv_count>3) settled=true;                  
@@ -306,14 +308,17 @@ void MpuDrv::process() {
 
 void MpuDrv::flushAlarms() {
   // flush alarms
-  static char buf[20]; // save stack
+  //static char buf[20]; // save stack
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
     if(fail_cnt_buf[i]) {
       //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CYCLE+i, fail_cnt[i]);        
+      /*  
       strcpy(buf, "MPF ");
       itoa_cat(i, buf); strcat(buf, ",");
       itoa_cat(fail_cnt_buf[i], buf); 
       xLogger.vAddLogMsg(buf);
+      */
+      xLogger.vAddLogMsg("MPF", i, (const char *)NULL, fail_cnt_buf[i]);
     }
   }
 }

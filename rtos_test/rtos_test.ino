@@ -45,8 +45,6 @@ ComLogger xLogger;
 Sensor xSensor;
 Motor xMotor;
 
-int ipwm=0;
-
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
@@ -78,6 +76,7 @@ static void vLazyTask(void *pvParameters) {
         float yaw=MpuDrv::Mpu.getYaw_safe(); 
         int val = yaw*180.0/PI;
         int16_t enc[2];
+        /*
         char buf[32];       
         strcpy(buf, "Y: ");
         itoa_cat(val, buf);        
@@ -90,9 +89,12 @@ static void vLazyTask(void *pvParameters) {
         strcat(buf, " U: ");
         val=xSensor.Get();
         itoa_cat(val, buf);        
-        xLogger.vAddLogMsg(buf);  
-
-         
+        xLogger.vAddLogMsg(buf);           
+        */
+        xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
+        if (xMotor.GetEnc(enc)) {
+          xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
+        }
     }
 }
 
@@ -107,6 +109,7 @@ static void vIMU_Task(void *pvParameters) {
         xLogger.vAddLogMsg("Activate motion!");
         xSensor.Start();     
         xMotor.Start();     
+        xMotor.SetMotors(50, 50);     
       }
     }
 }
@@ -126,9 +129,7 @@ static void vMotionTask(void *pvParameters) {
       vTaskDelay(50); 
       MpuDrv::Mpu.process_safe();     
       MpuDrv::Mpu.flushAlarms();
-// test PWM
-      pwmWrite(MOTOR_EN_2_PIN, ipwm);
-      ipwm+=500;
+      xMotor.Do();
     }
 }
 

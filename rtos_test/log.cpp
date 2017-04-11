@@ -25,6 +25,61 @@ void ComLogger::vAddLogMsg(const char *pucMsg) {
       txMessage.ucMessageID++;     
       if(pucMsg) 
         strncpy(txMessage.ucData, pucMsg, CLOG_MSG_SZ);          
+      else *txMessage.ucData=0;  
+      xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
+      xSemaphoreGive( xLogFree );
+    }
+}
+
+void ComLogger::vAddLogMsg(const char *pucMsg, int16_t i) {  
+   if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
+    {
+      txMessage.ucMessageID++;     
+      if(pucMsg) 
+        strncpy(txMessage.ucData, pucMsg, CLOG_MSG_SZ);          
+      else *txMessage.ucData=0;        
+      strncat(txMessage.ucData, ":", CLOG_MSG_SZ);          
+      itoa_cat(i, txMessage.ucData);
+      xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
+      xSemaphoreGive( xLogFree );
+    }
+}
+
+void ComLogger::vAddLogMsg(const char *pucMsg1, int16_t i1, const char *pucMsg2, int16_t i2) {  
+   if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
+    {
+      txMessage.ucMessageID++;     
+      if(pucMsg1) 
+        strncpy(txMessage.ucData, pucMsg1, CLOG_MSG_SZ);          
+      else *txMessage.ucData=0;  
+      strncat(txMessage.ucData, ":", CLOG_MSG_SZ);          
+      itoa_cat(i1, txMessage.ucData);
+      if(pucMsg2) {
+        strncat(txMessage.ucData, ",", CLOG_MSG_SZ);                
+        strncat(txMessage.ucData, pucMsg2, CLOG_MSG_SZ);          
+      }
+      strncat(txMessage.ucData, ":", CLOG_MSG_SZ);          
+      itoa_cat(i2, txMessage.ucData);
+      
+      xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
+      xSemaphoreGive( xLogFree );
+    }
+}
+
+void ComLogger::vAddLogMsg(const char *pucMsg1, int16_t i1, int16_t i2, int16_t i3) {
+   if ( xSemaphoreTake( xLogFree, ( portTickType ) 10 ) == pdTRUE )
+    {
+      txMessage.ucMessageID++;     
+      if(pucMsg1) 
+        strncpy(txMessage.ucData, pucMsg1, CLOG_MSG_SZ);          
+      else *txMessage.ucData=0;  
+      strncat(txMessage.ucData, ":", CLOG_MSG_SZ);          
+      itoa_cat(i1, txMessage.ucData);
+      strncat(txMessage.ucData, ",", CLOG_MSG_SZ);          
+      itoa_cat(i2, txMessage.ucData);
+      strncat(txMessage.ucData, ",", CLOG_MSG_SZ);          
+      itoa_cat(i3, txMessage.ucData);
+      
       xQueueSendToBack( xLogQueue, ( void * ) &txMessage, ( TickType_t ) 0 );          
       xSemaphoreGive( xLogFree );
     }

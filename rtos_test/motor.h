@@ -2,16 +2,19 @@ class Motor {
   public:
     void Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin, int m_2_1_pin, int m_2_2_pin, int m_2_enab_pin, int m2_enc_pin);    
     void Start();
+    void Do(); 
+    void SetMotors(int8_t dp1, int8_t dp2);
     bool GetEnc(int16_t *dst);
-    //static Motor *instance;  
     void encInterrupt(uint16_t i);
   protected: 
-    int m_1_1_pin, m_1_2_pin, m_1_enab_pin;
-    int m_2_1_pin, m_2_2_pin, m_2_enab_pin;
-    
-    int16_t enc_pin[2];
-    int16_t enc_count[2];
-    int8_t enc_prev[2];
+    void Low_Drive(uint8_t i); 
+    struct {
+      uint16_t pin_1, pin_2, pin_enab, pin_enc;
+      int16_t enc_count;
+      uint8_t enc_prev_st;
+      int8_t dir;
+      uint16_t power;
+    } m[2];
     xSemaphoreHandle xMotorFree;
     bool running;
     
