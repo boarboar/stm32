@@ -58,13 +58,13 @@ static void vCommTask(void *pvParameters) {
     for (;;) {
         vTaskDelay(10);        
         if(xCommMgr.ReadSerialCommand()) {       
-          digitalWrite(BOARD_LED_PIN, HIGH);        
+          digitalWrite(BOARD_LED_PIN, LOW);        
           xLogger.vAddLogMsg(xCommMgr.GetBuffer());    
           xCommMgr.ProcessCommand();
           xLogger.vAddLogMsg(xCommMgr.GetDbgBuffer());  // debug        
           xCommMgr.Complete();
           //xCommMgr.Respond(xCmd.GetResponce());          
-          digitalWrite(BOARD_LED_PIN, LOW);
+          digitalWrite(BOARD_LED_PIN, HIGH);
         }        
     }
 }
@@ -136,7 +136,7 @@ static void vMotionTask(void *pvParameters) {
 
 void setup() {
     delay(5000);
-    digitalWrite(BOARD_LED_PIN, HIGH);
+    digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
       
     Serial.begin(115200); 
@@ -155,7 +155,7 @@ void setup() {
     MpuDrv::Mpu.init();
      
     Serial.println("Starting...");
-    digitalWrite(BOARD_LED_PIN, LOW);
+    digitalWrite(BOARD_LED_PIN, HIGH);
        
     xTaskCreate(vSerialOutTask,
                 "TaskSO",
