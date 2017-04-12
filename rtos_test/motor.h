@@ -4,13 +4,15 @@ class Motor {
     void Start();
     void Do(); 
     void SetMotors(int8_t dp1, int8_t dp2);
-    bool GetEnc(int16_t *dst);
+    bool GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist=NULL);
     void encInterrupt(uint16_t i);
   protected: 
     void Low_Drive(uint8_t i); 
     struct {
       uint16_t pin_1, pin_2, pin_enab, pin_enc;
-      int16_t enc_count;
+      uint16_t enc_count;
+      uint32_t enc_accum;
+      //uint32_t dist;
       uint8_t enc_prev_st;
       int8_t dir;
       uint16_t power;

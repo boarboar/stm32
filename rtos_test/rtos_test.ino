@@ -45,6 +45,8 @@ ComLogger xLogger;
 Sensor xSensor;
 Motor xMotor;
 
+TickType_t xRunTime=0;
+
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
     for (;;) {
@@ -70,29 +72,16 @@ static void vCommTask(void *pvParameters) {
 }
 
 static void vLazyTask(void *pvParameters) {
+    float yaw; 
+    int16_t val;
+    uint16_t enc[2];
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
         vTaskDelay(1000);
-        float yaw=MpuDrv::Mpu.getYaw_safe(); 
-        int val = yaw*180.0/PI;
-        int16_t enc[2];
-        /*
-        char buf[32];       
-        strcpy(buf, "Y: ");
-        itoa_cat(val, buf);        
-        if (xMotor.GetEnc(enc)) {
-          strcat(buf, " C: ");
-          itoa_cat(enc[0], buf);
-          strcat(buf, ", ");
-          itoa_cat(enc[1], buf);
-        }
-        strcat(buf, " U: ");
-        val=xSensor.Get();
-        itoa_cat(val, buf);        
-        xLogger.vAddLogMsg(buf);           
-        */
+        yaw=MpuDrv::Mpu.getYaw_safe(); 
+        val = yaw*180.0/PI;
         xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
-        if (xMotor.GetEnc(enc)) {
+        if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
     }
@@ -109,7 +98,9 @@ static void vIMU_Task(void *pvParameters) {
         xLogger.vAddLogMsg("Activate motion!");
         xSensor.Start();     
         xMotor.Start();     
+        // test
         xMotor.SetMotors(50, 50);     
+        xRunTime=xTaskGetTickCount(); 
       }
     }
 }
@@ -124,12 +115,18 @@ static void vSensorTask(void *pvParameters) {
 
 
 static void vMotionTask(void *pvParameters) {
-    xLogger.vAddLogMsg("Motion Task started.");
+    xLogger.vAddLogMsg("Motion Task started.");    
     for (;;) { 
       vTaskDelay(50); 
       MpuDrv::Mpu.process_safe();     
-      MpuDrv::Mpu.flushAlarms();
-      xMotor.Do();
+      MpuDrv::Mpu.flushAlarms();      
+      if(MpuDrv::Mpu.getStatus_safe()==MpuDrv::ST_READY) {
+        xMotor.Do();
+        // test
+        if(xTaskGetTickCount()-xRunTime > 5000) {
+          xMotor.SetMotors(0, 0);     
+        }
+      }
     }
 }
 

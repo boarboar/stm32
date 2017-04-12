@@ -2,8 +2,12 @@
 #include "motor.h"
 #include "log.h"
 
-//int ipwm=0; // test
-
+#define   V_NORM 10000
+#define   V_NORM_MAX 30000
+#define   V_NORM_PI2 62832L
+#define   WHEEL_CHGSTATES 40
+#define   WHEEL_RAD_MM   33 // measured 32
+#define   CHGST_TO_MM(CNT)  ((uint64_t)(CNT)*V_NORM_PI2*WHEEL_RAD_MM/WHEEL_CHGSTATES/V_NORM)
 extern ComLogger xLogger;
 
 static Motor *motor_instance=NULL;  
@@ -41,6 +45,8 @@ void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin
       pinMode(m[i].pin_enab, PWM);
       pinMode(m[i].pin_enc, INPUT_PULLUP);
       m[i].enc_count=0;
+      m[i].enc_accum=0;
+      //m[i].dist=0;
       m[i].enc_prev_st=digitalRead(m[i].pin_enc);
       m[i].dir=0;
       m[i].power=0;
@@ -70,15 +76,12 @@ void Motor::Start() {
 void Motor::Do() {
   if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
+      for(int i=0; i<2; i++) {
+        m[i].enc_accum+=m[i].enc_count;
+        m[i].enc_count=0;       
+      }
       xSemaphoreGive( xMotorFree );
     }
-  /*
-      // test PWM      
-      //  0 <= 65535; 
-      pwmWrite(m[0].pin_enab, ipwm);
-      pwmWrite(m[1].pin_enab, ipwm);
-      ipwm+=500;
-*/
 }
 
 // 0-100 
@@ -115,12 +118,14 @@ void Motor::SetMotors(int8_t dp1, int8_t dp2) {
     }
 }
 
-bool Motor::GetEnc(int16_t *dst) {  
+bool Motor::GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist) {  
   int ret=false;
   if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
-      dst[0]=m[0].enc_count;
-      dst[1]=m[1].enc_count;
+      for(int i=0; i<2; i++) {
+        if(*dst_enc) dst_enc[i]=m[i].enc_accum;
+        if(*dst_dist) dst_dist[i]= (CHGST_TO_MM(m[i].enc_accum));
+      }      
       ret = true;
       xSemaphoreGive( xMotorFree );
     }

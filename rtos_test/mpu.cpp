@@ -54,7 +54,16 @@ float MpuDrv::getYaw_safe()
   return yaw;    
 }
 
-
+int8_t MpuDrv::getStatus_safe() 
+{
+  int8_t st=ST_0;
+  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
+      {
+        st = dmpStatus;          
+        xSemaphoreGive( xIMUFree );
+      } 
+  return st;    
+}
   
 /*
 int16_t MpuDrv::init(uint16_t intrp) {
@@ -206,12 +215,6 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    Serial.print(F("Q16 Err:\t")); Serial.print(qe); Serial.print(F("\tA16 Err:\t")); Serial.print(ae); 
    Serial.print("\tCC:\t"); Serial.print(conv_count); Serial.print("\tT:\t"); Serial.println((millis()-start)/1000);
         */
-        /*
-   char buf[36];
-   strcpy(buf, "QE: "); itoa_cat(qe, buf);     
-   strcat(buf, " AE: "); itoa_cat(ae, buf);   
-   xLogger.vAddLogMsg(buf);
-     */
    xLogger.vAddLogMsg("QE", qe, "AE", ae);  
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
       conv_count++;

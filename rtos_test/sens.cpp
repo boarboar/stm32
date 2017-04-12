@@ -17,8 +17,8 @@ void Sensor::Init(int sens_in_pin, int sens_out_pin, int servo_pin) {
 }
 
 void Sensor::Start() {
-  xLogger.vAddLogMsg("Sens module run.");
-  running=true;
+    xLogger.vAddLogMsg("Sens module run.");
+    running=true;
 }
   
 void Sensor::Do() {
@@ -34,16 +34,6 @@ void Sensor::Do() {
     {
       if(d>0) value=(int16_t)(d/58);
       else value = -2;
-/*
-      char buf[32];
-        
-        
-        strcpy(buf, "SENS: ");
-
-        itoa_cat(value, buf);
-        
-        xLogger.vAddLogMsg(buf);  
-        */
       xSemaphoreGive( xSensFree );
     }
 }

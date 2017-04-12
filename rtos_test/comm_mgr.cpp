@@ -121,7 +121,7 @@ boolean CommManager::ProcessCommand()
         break;
       case REG_ENC:
         vcnt=2;
-        xMotor.GetEnc(val);        
+        //xMotor.GetEncDist(val, NULL);        
         break;  
       default:;
         vcnt=0;

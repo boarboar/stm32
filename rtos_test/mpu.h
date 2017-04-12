@@ -29,6 +29,7 @@ public:
   int16_t cycle_safe();
   void process_safe();
   float getYaw_safe();
+  int8_t getStatus_safe();
   
   int16_t cycle(uint16_t dt);
   int8_t getStatus();
