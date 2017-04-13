@@ -108,8 +108,9 @@ static void vIMU_Task(void *pvParameters) {
 static void vSensorTask(void *pvParameters) {
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
-        vTaskDelay(1000);
-        xSensor.Do();     
+        //vTaskDelay(1000);
+        vTaskDelay(10);
+        xSensor.DoCycle();     
     }
 }
 

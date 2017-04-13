@@ -8,6 +8,11 @@
 extern ComLogger xLogger;
 extern Sensor xSensor;
 extern Motor xMotor;
+
+// TODO CMD IMPL
+// Move: C:M, V // SPEED
+// Steer: C:S, S // GRAD
+// Bearing C:B, A //GRAD
  
 void CommManager::Init(uint32_t comm_speed) {
   bytes = 0;
