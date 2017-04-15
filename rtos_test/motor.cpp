@@ -123,8 +123,8 @@ bool Motor::GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist) {
   if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
       for(int i=0; i<2; i++) {
-        if(*dst_enc) dst_enc[i]=m[i].enc_accum;
-        if(*dst_dist) dst_dist[i]= (CHGST_TO_MM(m[i].enc_accum));
+        if(dst_enc) dst_enc[i]=m[i].enc_accum;
+        if(dst_dist) dst_dist[i]= (CHGST_TO_MM(m[i].enc_accum));
       }      
       ret = true;
       xSemaphoreGive( xMotorFree );
