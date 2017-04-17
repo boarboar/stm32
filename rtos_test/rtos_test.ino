@@ -143,7 +143,7 @@ void setup() {
     
     xLogger.Init();
     xCommMgr.Init(115200);
-    xSensor.Init(US_IN_1_PIN, US_OUT_1_PIN, SERVO_1_PIN); 
+    xSensor.Init(SERVO_1_PIN, US_IN_1_PIN, US_OUT_1_PIN, US_IN_2_PIN, US_OUT_2_PIN); 
     xMotor.Init(MOTOR_OUT_1_1_PIN, MOTOR_OUT_1_2_PIN, MOTOR_EN_1_PIN, MOTOR_ENC_1_PIN,
         MOTOR_OUT_2_1_PIN, MOTOR_OUT_2_2_PIN, MOTOR_EN_2_PIN, MOTOR_ENC_2_PIN); 
 
