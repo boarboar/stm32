@@ -58,22 +58,24 @@ void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin
     attachInterrupt(m[0].pin_enc, encodeInterrupt_1, CHANGE);
     attachInterrupt(m[1].pin_enc, encodeInterrupt_2, CHANGE);
     
-    running = false;
+    //running = false;
       
     Serial.println("Motor OK");
 }
 
+/*
 void Motor::Start() {
   xLogger.vAddLogMsg("Motor module run.");
   if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     { 
-      running=true;
+      //running=true;
       //enc_count[0]=enc_count[1]=0;
       xSemaphoreGive( xMotorFree );
     }
 }
+*/
 
-void Motor::Do() {
+void Motor::DoCycle() {
   if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
       for(int i=0; i<2; i++) {
@@ -87,7 +89,7 @@ void Motor::Do() {
 // 0-100 
 void Motor::SetMotors(int8_t dp1, int8_t dp2) {
 
-  if(!running) return;
+  //if(!running) return;
   
   int8_t dp[2];
   int8_t d[2];

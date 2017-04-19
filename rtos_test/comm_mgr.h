@@ -13,7 +13,7 @@ class CommManager {
     const char *GetDbgBuffer();
     boolean ProcessCommand();    
   protected:
-    enum Regs {REG_None=0, REG_ID=1, REG_SENS=3, REG_ENC=4, REG_MOTOR_POWER=5};
+    enum Regs {REG_None=0, REG_ID=1, REG_SENS=3, REG_ENC=4, REG_MOTOR_POWER=5, REG_MOVE=6, REG_STEER=7, REG_MOVE_BEAR=8};
     uint8_t CRC();
     int16_t ReadInt() ;        
     char buf[CM_BUF_SIZE];

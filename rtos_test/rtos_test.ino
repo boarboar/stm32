@@ -7,6 +7,7 @@
 #include "mpu.h"
 #include "sens.h"
 #include "motor.h"
+#include "motion.h"
 
 #define BOARD_LED_PIN PC13
 
@@ -44,8 +45,7 @@ CommManager xCommMgr;
 ComLogger xLogger;
 Sensor xSensor;
 Motor xMotor;
-
-TickType_t xRunTime=0;
+Motion xMotion;
 
 static void vSerialOutTask(void *pvParameters) {
     Serial.println("Serial Out Task started.");
@@ -97,10 +97,7 @@ static void vIMU_Task(void *pvParameters) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
         xSensor.Start();     
-        xMotor.Start();     
-        // test
-        xMotor.SetMotors(50, 50);     
-        xRunTime=xTaskGetTickCount(); 
+        xMotion.Start();             
       }
     }
 }
@@ -120,14 +117,13 @@ static void vMotionTask(void *pvParameters) {
     for (;;) { 
       vTaskDelay(50); 
       MpuDrv::Mpu.process_safe();     
-      MpuDrv::Mpu.flushAlarms();      
+      MpuDrv::Mpu.flushAlarms();     
+      /* 
       if(MpuDrv::Mpu.getStatus_safe()==MpuDrv::ST_READY) {
-        xMotor.Do();
-        // test
-        if(xTaskGetTickCount()-xRunTime > 5000) {
-          xMotor.SetMotors(0, 0);     
-        }
+        xMotion.DoCycle();
       }
+      */
+      xMotion.DoCycle(MpuDrv::Mpu.getYaw_safe());
     }
 }
 
@@ -146,7 +142,8 @@ void setup() {
     xSensor.Init(SERVO_1_PIN, US_IN_1_PIN, US_OUT_1_PIN, US_IN_2_PIN, US_OUT_2_PIN); 
     xMotor.Init(MOTOR_OUT_1_1_PIN, MOTOR_OUT_1_2_PIN, MOTOR_EN_1_PIN, MOTOR_ENC_1_PIN,
         MOTOR_OUT_2_1_PIN, MOTOR_OUT_2_2_PIN, MOTOR_EN_2_PIN, MOTOR_ENC_2_PIN); 
-
+    xMotion.Init(&xMotor);
+      
     Serial.println("Init Wire...");
     //Wire.begin(SCL_PIN, SDA_PIN);
     Wire.begin();
@@ -173,7 +170,7 @@ void setup() {
                 "TaskSens",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 3, // max
+                tskIDLE_PRIORITY + 2, // max
                 NULL);
                   
     xTaskCreate(vIMU_Task,

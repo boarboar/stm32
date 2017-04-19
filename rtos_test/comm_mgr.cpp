@@ -2,17 +2,14 @@
 #include "log.h"
 #include "sens.h"
 #include "motor.h"
+#include "motion.h"
 #include "comm_mgr.h"
 #include "base64.h"
 
 extern ComLogger xLogger;
 extern Sensor xSensor;
 extern Motor xMotor;
-
-// TODO CMD IMPL
-// Move: C:M, V // SPEED
-// Steer: C:S, S // GRAD
-// Bearing C:B, A //GRAD
+extern Motion xMotion;
  
 void CommManager::Init(uint32_t comm_speed) {
   bytes = 0;
@@ -191,19 +188,35 @@ boolean CommManager::ProcessCommand()
     itoa_cat(val[0], msgdbg);
   }
 
-  //int8_t retcode=0;
-  switch(reg) {
-    case REG_ID:
-        break;    
+  int8_t rc=0;
+  switch(reg) {    
+    //case REG_ID:
+    //    break;    
     case REG_MOTOR_POWER:
-        if(vcnt<2) { /*retcode=-21;*/ break; }
-        xMotor.SetMotors(val[0], val[1]);
+        if(vcnt<2) { rc=-21; break; }
+        xMotion.SetMotors(val[0], val[1]);
         break;
+    case REG_MOVE:
+        if(vcnt<1) { rc=-21; break; }
+        xMotion.Move(val[0]);
+        break;    
+    case REG_STEER:
+        if(vcnt<1) { rc=-21; break; }
+        xMotion.Steer(val[0]);
+        break;    
+    case REG_MOVE_BEAR:
+        if(vcnt<1) { rc=-21; break; }
+        xMotion.MoveBearing(val[0]);
+        break;            
     default:;        
   }
+
   
-  Serial3.println("R 0");
-        
+  //Serial3.println("R 0");
+  strcpy(buf, "R ");
+  itoa_cat(rc, buf);
+  Serial3.println(buf);       
+  
   return true;
 }
 
