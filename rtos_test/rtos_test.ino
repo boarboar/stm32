@@ -115,7 +115,7 @@ static void vSensorTask(void *pvParameters) {
 static void vMotionTask(void *pvParameters) {
     xLogger.vAddLogMsg("Motion Task started.");    
     for (;;) { 
-      vTaskDelay(50); 
+      vTaskDelay(100); // should be less
       MpuDrv::Mpu.process_safe();     
       MpuDrv::Mpu.flushAlarms();     
       /* 

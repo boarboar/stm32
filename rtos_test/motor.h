@@ -4,7 +4,7 @@ class Motor {
     //void Start();
     void DoCycle(); 
     void SetMotors(int8_t dp1, int8_t dp2);
-    bool GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist=NULL);
+    bool GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist);
     void encInterrupt(uint16_t i);
   protected: 
     void Low_Drive(uint8_t i); 
