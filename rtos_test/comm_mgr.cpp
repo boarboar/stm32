@@ -129,21 +129,25 @@ boolean CommManager::ProcessCommand()
         vcnt=0;
     }
     if(!vcnt) strcpy(buf, "R -7");
-    else if(vcnt==1) {
-      strcpy(buf, "R 0,");
-      itoa_cat(val[0], buf);
-      strcat(buf, "%");
-    } else {
-      strcpy(buf, "R 0,[");
-      for(uint8_t i=0; i<vcnt; i++) {
-        itoa_cat(val[i], buf);
-        if(i<vcnt-1) strcat(buf, ",");
-      }
-      strcat(buf, "]%");
+    else 
+    {
+      if(vcnt==1) 
+      {
+        strcpy(buf, "R 0,");
+        itoa_cat(val[0], buf);
+        strcat(buf, "%");
+      } else 
+      {
+        strcpy(buf, "R 0,[");
+        for(uint8_t i=0; i<vcnt; i++) {
+          itoa_cat(val[i], buf);
+          if(i<vcnt-1) strcat(buf, ",");
+        }
+        strcat(buf, "]%");
+      }    
+      crc=CRC();
+      itoa_cat(crc, buf);
     }
-    
-    crc=CRC();
-    itoa_cat(crc, buf);
     Serial3.println(buf);
     strcat(msgdbg, "->");
     strcat(msgdbg, buf);
