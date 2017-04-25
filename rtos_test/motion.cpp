@@ -12,6 +12,8 @@ const int16_t bear_pid_gain_div=10;
 const int16_t bear_pid_limit_i=100;
 const int M_POW_MIN=30; 
 const int M_POW_MAX=200;
+const int M_POW_NORM=100;
+const int M_SPEED_NORM=200;
 
 void Motion::Init(Motor *m) {
   vSemaphoreCreateBinary(xMotionFree);        
@@ -56,6 +58,7 @@ void Motion::DoCycle(float yaw)
 {
   float mov; //mm
   pxMotor->DoCycle();
+  fCurrYaw = yaw;
   if(!bReady) return;
   //uint32_t dt=xTaskGetTickCount()-xRunTime;
   xRunTime=xTaskGetTickCount();       
@@ -119,18 +122,108 @@ void Motion::DoCycle(float yaw)
         if(cur_pow[i]>M_POW_MAX) cur_pow[i]=M_POW_MAX; 
       // maybe a better idea would be to make limits proportional to the target?
       }
-      /*
-      if(targ_speed)
-        setPowerStraight(targ_speed, cur_pow);      
+      if(iTargSpeed)
+        SetPowerStraight(iTargSpeed, cur_pow);      
       else {
-        if(!rot_speed) startRotate(0); // stop rotate
-        else setPowerRotate(rot_speed, cur_pow);      
-      }
-      */
+        if(!iTargRot) StartRotate(0); // stop rotate
+        else SetPowerRotate(iTargRot, cur_pow);              
+      }     
     }
     lPIDCnt++;
   }
 }
+
+void Motion::Move(int16_t tspeed)
+{
+  if(!bReady) return;
+  xLogger.vAddLogMsg("MOV V:", tspeed);
+  if(iTargSpeed!=0 && tspeed==0) {
+    // stop moving    
+    //Serial.print(F("Stop TV, AVQE=")); Serial.println(getAVQErr());     
+  } else if(iTargRot!=0 && tspeed==0) {
+    // stop rotating    
+    iTargRot=0;
+    //Serial.println(F("Stop ROT")); 
+  } else if(iTargSpeed!=0 && tspeed!=0) { 
+    // start moving
+    lPIDCnt=0;
+    //qsum_err=0;
+    //run_dist=0;
+    //Serial.print(F("Start TV=")); Serial.println(tspeed);     
+  } 
+
+
+  AdjustTargBearing(0, true);
+  err_bearing_p_0=err_bearing_i=0;    
+  iTargSpeed=tspeed*10; //mm
+  base_pow=(int32_t)abs(iTargSpeed)*M_POW_NORM/M_SPEED_NORM; // temp
+  delta_pow=0;
+   
+  int16_t cur_pow[2]={base_pow, base_pow};
+  //Serial.print(F("STV TV=")); Serial.print(targ_speed); Serial.print(F("POW=")); Serial.print(cur_pow[0]); Serial.print(F("\t ")); Serial.println(cur_pow[1]); 
+  SetPowerStraight(iTargSpeed, cur_pow);
+  return;
+}
+
+void Motion::Steer(int16_t angle)
+{
+  if(!bReady) return;
+  xLogger.vAddLogMsg("ROT A:", angle);
+  AdjustTargBearing(angle, true);
+  //if(!iTargRot && !iTaregSpeed) return startRotate(M_SPEED_NORM);
+}
+
+void Motion::MoveBearing(int16_t angle)
+{
+  if(!bReady) return;
+  xLogger.vAddLogMsg("BER A:", angle);
+  AdjustTargBearing(angle, false);
+  //if(!iTargRot && !iTaregSpeed) return startRotate(M_SPEED_NORM);
+}
+
+void Motion::AdjustTargBearing(int16_t s, bool absolute) {
+  iTargBearing = s;
+  if(absolute) iTargBearing+=fCurrYaw*180.0/PI;
+  if(iTargBearing>180) iTargBearing-=180;
+  else if(iTargBearing<-180) iTargBearing+=180;    
+}
+
+
+void Motion::StartRotate(int16_t tspeed) {
+  int16_t a = iTargBearing-fCurrYaw*180.0/PI;
+  if(a>180) a-=180;
+  else if(a<-180) a+=180;    
+  
+  if(a>1) { 
+    iTargRot=tspeed;  
+    //Serial.println(F("Start ROT >>"));     
+  }
+  else if(a<-1) { 
+    iTargRot=-tspeed;
+    //Serial.println(F("Start ROT <<")); 
+    }
+  
+  err_bearing_p_0=-a;     
+  if(err_bearing_p_0<0) err_bearing_p_0=-err_bearing_p_0; 
+  err_bearing_i=0;    
+  base_pow=(int32_t)abs(iTargRot)*M_POW_NORM/M_SPEED_NORM; // temp
+  delta_pow=0;  
+  lPIDCnt=0;    
+  int16_t cur_pow[2]={base_pow, base_pow};
+  //Serial.print(F("STR =")); Serial.print(rot_speed); Serial.print(F("POW=")); Serial.print(cur_pow[0]); Serial.print(F("\t ")); Serial.println(cur_pow[1]);  
+  SetPowerRotate(iTargRot, cur_pow);    
+}
+
+void Motion::SetPowerStraight(int16_t dir, int16_t *p) {
+  if(dir>0) SetMotors(p[0], p[1]);
+  else SetMotors(-p[0], -p[1]);  
+}
+
+void Motion::SetPowerRotate(int16_t dir, int16_t *p) {
+  if(dir>0) SetMotors(p[0], -p[1]);
+  else SetMotors(-p[0], p[1]);  
+}
+
 
 void Motion::SetMotors(int8_t dp1, int8_t dp2) // in %%
 {
@@ -149,27 +242,6 @@ bool Motion::GetAdvance(uint32_t *dst_dist)
       xSemaphoreGive( xMotionFree );
     }
   return ret;
-}
-
-void Motion::Move(int16_t speed)
-{
-  if(!bReady) return;
-  xLogger.vAddLogMsg("MOV V:", speed);
-  // setTargSpeed(speed_val)
-}
-
-void Motion::Steer(int16_t angle)
-{
-  if(!bReady) return;
-  xLogger.vAddLogMsg("ROT A:", angle);
-  // setTargSteering(steer_val)
-}
-
-void Motion::MoveBearing(int16_t angle)
-{
-  if(!bReady) return;
-  xLogger.vAddLogMsg("BER A:", angle);
-  // setTargBearing(angle_val)
 }
 
 
