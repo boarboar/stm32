@@ -1,8 +1,11 @@
 
 #define CM_BUF_SIZE 64
-#define CM_NVAL     2
+#define CM_NVAL     10
 
 #define CM_ID 94
+
+#define ALR_DATA_SZ 4
+#define ALR_Q_SZ 16
 
 class CommManager {
   public:
@@ -12,8 +15,20 @@ class CommManager {
     const char *GetBuffer();
     const char *GetDbgBuffer();
     boolean ProcessCommand();    
+    void vAddAlarm(uint8_t level, uint8_t module, uint8_t code, int16_t p0=0, int16_t p1=0, int16_t p2=0, int16_t p3=0);
   protected:
-    enum Regs {REG_None=0, REG_ID=1, REG_SENS=3, REG_ENC=4, REG_MOTOR_POWER=5, REG_MOVE=6, REG_STEER=7, REG_MOVE_BEAR=8};
+    struct Alarm
+    {
+      uint16_t uAlarmID;      
+      int16_t iData[ ALR_DATA_SZ ];
+      uint8_t level, module, code;
+    };
+    struct Alarm txAlarm;
+    struct Alarm rxAlarm;
+    QueueHandle_t xAlarmQueue;
+    xSemaphoreHandle xAlarmFree;
+  
+    enum Regs {REG_None=0, REG_ID=1, REG_SENS=3, REG_ENC=4, REG_MOTOR_POWER=5, REG_MOVE=6, REG_STEER=7, REG_MOVE_BEAR=8, REG_ALARM=9};
     uint8_t CRC();
     int16_t ReadInt() ;        
     char buf[CM_BUF_SIZE];
@@ -23,7 +38,7 @@ class CommManager {
     uint8_t verb;
     uint8_t reg;
     uint8_t vcnt;
-    int16_t val[CM_NVAL];
+    int16_t val[CM_NVAL];    
 };
 
 

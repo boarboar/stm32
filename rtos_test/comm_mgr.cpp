@@ -12,6 +12,18 @@ extern Motor xMotor;
 extern Motion xMotion;
  
 void CommManager::Init(uint32_t comm_speed) {
+  vSemaphoreCreateBinary(xAlarmFree);
+  xAlarmQueue = xQueueCreate( ALR_Q_SZ, sizeof( struct Alarm ) );
+
+  if( xAlarmQueue == NULL )
+    {
+        /* Queue was not created and must not be used. */
+        Serial.println("Couldn't create AQ");
+        return;
+    }
+
+  txAlarm.uAlarmID=0;
+    
   bytes = 0;
   buf[bytes] = 0;
   Serial3.begin(comm_speed); 
@@ -124,6 +136,19 @@ boolean CommManager::ProcessCommand()
       case REG_ENC:
         vcnt=2;
         //xMotor.GetEncDist(val, NULL);        
+        break;  
+      case REG_ALARM:
+        if( xQueueReceive( xAlarmQueue, &rxAlarm, ( TickType_t ) 1 ) )
+        {
+          vcnt=7;
+          val[0]=rxAlarm.level;
+          val[1]=rxAlarm.module;
+          val[2]=rxAlarm.code;
+          val[3]=rxAlarm.iData[0];
+          val[4]=rxAlarm.iData[1];
+          val[5]=rxAlarm.iData[2];
+          val[6]=rxAlarm.iData[3];
+        }  
         break;  
       default:;
         vcnt=0;
@@ -278,7 +303,22 @@ void CommManager::Complete() {
   verb=reg=vcnt=0;
 }
 
-
+void CommManager::vAddAlarm(uint8_t level, uint8_t module, uint8_t code, int16_t p0, int16_t p1, int16_t p2, int16_t p3)
+{
+   if ( xSemaphoreTake( xAlarmFree, ( portTickType ) 10 ) == pdTRUE )
+    {
+      txAlarm.uAlarmID++;     
+      txAlarm.level=level;
+      txAlarm.module=module;
+      txAlarm.code=code;
+      txAlarm.iData[0]=p0;
+      txAlarm.iData[1]=p1;
+      txAlarm.iData[2]=p2;
+      txAlarm.iData[3]=p3;
+      xQueueSendToBack( xAlarmQueue, ( void * ) &txAlarm, ( TickType_t ) 0 );          
+      xSemaphoreGive( xAlarmFree );
+    }
+}
 
 
 

@@ -11,6 +11,20 @@ void setup() {
 
 void loop() {
   int resp;
+  if(cmgr.Get(9)==0) { // alarm
+    int n=cmgr.GetResultCnt();
+    if(n) {
+      const int16_t *va=cmgr.GetResultVal();
+      Serial.print("ALR :");
+      
+      for(int i=0; i<n; i++) {
+        Serial.print(va[i]);    
+        Serial.print(" ");
+      }
+      Serial.println();
+    }
+  }
+  
   for(int ireg=1; ireg<=4; ireg++) {
   delay(5000);
   resp=cmgr.Get(ireg);

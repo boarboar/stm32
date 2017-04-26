@@ -90,12 +90,14 @@ static void vLazyTask(void *pvParameters) {
 static void vIMU_Task(void *pvParameters) {
     int16_t mpu_res;    
     xLogger.vAddLogMsg("IMU Task started.");
+    xCommMgr.vAddAlarm(2, 2, 1); //test
     for (;;) { 
       vTaskDelay(3); 
       mpu_res = MpuDrv::Mpu.cycle_safe();       
       if(mpu_res==2) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
+        xCommMgr.vAddAlarm(2, 2, 2); //test
         xSensor.Start();     
         xMotion.Start();             
       }
