@@ -84,6 +84,7 @@ static void vLazyTask(void *pvParameters) {
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
+       xCommMgr.vAddAlarm(2, 3, 4); //test 
     }
 }
 

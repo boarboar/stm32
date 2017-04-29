@@ -1,6 +1,6 @@
 
 #define CM_BUF_SIZE 64
-#define CM_NVAL     2
+#define CM_NVAL     10
 
 class CommManager {
   public:

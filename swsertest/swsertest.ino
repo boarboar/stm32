@@ -1,6 +1,11 @@
 
 #include "comm_mgr.h"
 
+/*
+>G 9%168
+<R 0,[2,2,1,0,0,0,0]%23
+*/
+
 CommManager cmgr;
     
 void setup() {
