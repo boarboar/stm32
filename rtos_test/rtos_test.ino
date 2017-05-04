@@ -84,21 +84,21 @@ static void vLazyTask(void *pvParameters) {
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
-       xCommMgr.vAddAlarm(2, 3, 4); //test 
+       xCommMgr.vAddAlarm(CommManager::CM_INFO, CommManager::CM_MODULE_SYS, 4); //test 
     }
 }
 
 static void vIMU_Task(void *pvParameters) {
     int16_t mpu_res;    
     xLogger.vAddLogMsg("IMU Task started.");
-    xCommMgr.vAddAlarm(2, 2, 1); //test
+    //xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, 1); //test
     for (;;) { 
       vTaskDelay(3); 
       mpu_res = MpuDrv::Mpu.cycle_safe();       
       if(mpu_res==2) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
-        xCommMgr.vAddAlarm(2, 2, 2); //test
+        //xCommMgr.vAddAlarm(2, 2, 2); //test
         xSensor.Start();     
         xMotion.Start();             
       }

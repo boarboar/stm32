@@ -16,7 +16,7 @@ void setup() {
 
 void loop() {
   int resp;
-  if(cmgr.Get(9)==0) { // alarm
+  while(cmgr.Get(9)==0) { // alarm
     int n=cmgr.GetResultCnt();
     if(n) {
       const int16_t *va=cmgr.GetResultVal();

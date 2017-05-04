@@ -16,6 +16,9 @@ class CommManager {
     const char *GetDbgBuffer();
     boolean ProcessCommand();    
     void vAddAlarm(uint8_t level, uint8_t module, uint8_t code, int16_t p0=0, int16_t p1=0, int16_t p2=0, int16_t p3=0);
+    
+    enum Modules { CM_MODULE_SYS=1, CM_MODULE_IMU=1, CM_MODULE_CTL=2 };
+    enum Levels { CM_ALARM=1, CM_EVENT=2, CM_INFO=3 };
   protected:
     struct Alarm
     {

@@ -1,5 +1,6 @@
 #include <MapleFreeRTOS821.h>
 #include "log.h"
+#include "comm_mgr.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "mpu.h"
 
@@ -10,6 +11,7 @@
 #define A_K 0.3f
 
 extern ComLogger xLogger;
+extern CommManager xCommMgr;
 
 MpuDrv MpuDrv::Mpu; // singleton
 
@@ -107,7 +109,7 @@ int16_t MpuDrv::init() {
     mpu.setXGyroOffset(220);
     mpu.setYGyroOffset(76);
     mpu.setZGyroOffset(-85);
-    mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+    mpu.setZAccelOffset(1788); // 1688 factory default (?)
   
     // turn on the DMP, now that it's ready
     xLogger.vAddLogMsg("Enab DMP...");
@@ -123,7 +125,7 @@ int16_t MpuDrv::init() {
     // enter warmup/convergence stage 
     dmpStatus=ST_WUP;
     start=millis();
-    //@@@@  Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU, Logger::UMP_LOGGER_EVENT, MPU_FAIL_INIT_OK, "IMU_INT_OK");  
+    xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_INIT, 0); 
     xLogger.vAddLogMsg("DMP ok!"); //Serial.println(packetSize);    
   } else {
     // ERROR!
@@ -133,7 +135,7 @@ int16_t MpuDrv::init() {
     //Serial.print("DMP Init fail, code "); Serial.println(devStatus);
     xLogger.vAddLogMsg("DMP Init fail");
     dmpStatus = ST_FAIL;
-    //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_INIT_OK, "IMU_INT_FL");  
+    xCommMgr.vAddAlarm(CommManager::CM_ALARM, CommManager::CM_MODULE_IMU, MPU_FAIL_INIT, -1);
     need_reset=1;
   }
   return dmpStatus;
@@ -146,7 +148,6 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
 
   if(data_ready && (micros()-start)/1000000L>1) {
     // no data from MPU after 1sec
-    //@@@@Stat::StatStore.mpu_ndt_cnt++;
     //xLogger.vAddLogMsg("MPU - no data in 1s!");
     need_reset=1;
     data_ready=0;
@@ -165,9 +166,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     // reset so we can continue cleanly
     mpu.resetFIFO();
     fifoCount=0;
-    //@@@@Stat::StatStore.mpu_owfl_cnt++;
     fail_cnt[MPU_FAIL_FIFOOVFL_IDX]++;
-    //xLogger.vAddLogMsg("FIFO overflow!");
     return -2;
   } 
   // otherwise, check for DMP data ready interrupt (this should happen frequently)
@@ -178,8 +177,6 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   //if(fifoCount < packetSize) return 0; // ???
   while (fifoCount < packetSize && i++<5) { fifoCount = mpu.getFIFOCount(); yield(); } 
   if(fifoCount < packetSize) {
-    //@@@@Stat::StatStore.mpu_gup_cnt++;
-    //xLogger.vAddLogMsg("FIFO wait - giveup!");
     fail_cnt[MPU_FAIL_FIFOTMO_IDX]++;
     return 0; // giveup
   }
@@ -188,8 +185,6 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   //mpu.resetFIFO(); fifoCount=0; // this is in case of overflows... 
   fifoCount -= packetSize;
   if(fifoCount >0) { 
-    //@@@@Stat::StatStore.mpu_exc_cnt++;
-    //xLogger.vAddLogMsg("FIFO excess!");
     mpu.resetFIFO();
     fifoCount=0;
     fail_cnt[MPU_FAIL_FIFOEXCESS_IDX]++;
@@ -216,27 +211,26 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    Serial.print("\tCC:\t"); Serial.print(conv_count); Serial.print("\tT:\t"); Serial.println((millis()-start)/1000);
         */
    xLogger.vAddLogMsg("QE", qe, "AE", ae);  
+   xCommMgr.vAddAlarm(CommManager::CM_INFO, CommManager::CM_MODULE_IMU, MPU_EVENT_CONV_PROG, qe, ae);       
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
       conv_count++;
       if((millis()-start)/1000 > INIT_PERIOD_MIN && conv_count>3) settled=true;                  
     } else conv_count=0;  
    if((millis()-start)/1000 > INIT_PERIOD_MAX) {
-      //Serial.println(F("===MPU Failed to converge, however switching to settled status...")); // TODO -?
       xLogger.vAddLogMsg("MPU Failed to converge");
-      settled=true;
-      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CONVTMO, "IMU_CVT_TM");  
+      xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_CONVTMO, -1); 
+      settled=true;      
     }
 
    for(i=0; i<4; i++) q16_0[i]=q16[i];
    aa16_0 = aa16;
         
    if(settled) {
-      //Serial.print(F("===MPU Converged, cnvcnt=")); Serial.println(conv_count);
       xLogger.vAddLogMsg("MPU converged");
       start=micros();
       dmpStatus=ST_READY;        
       xLastWakeTime=xTaskGetTickCount();
-      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_EVENT, MPU_FAIL_CONVTMO, "IMU_CVT_OK");  
+      xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_CONVTMO, 0);       
      }
   } // warmup
 
@@ -313,15 +307,9 @@ void MpuDrv::flushAlarms() {
   // flush alarms
   //static char buf[20]; // save stack
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
-    if(fail_cnt_buf[i]) {
-      //@@@@Logger::Instance.putEvent(Logger::UMP_LOGGER_MODULE_IMU,  Logger::UMP_LOGGER_ALARM, MPU_FAIL_CYCLE+i, fail_cnt[i]);        
-      /*  
-      strcpy(buf, "MPF ");
-      itoa_cat(i, buf); strcat(buf, ",");
-      itoa_cat(fail_cnt_buf[i], buf); 
-      xLogger.vAddLogMsg(buf);
-      */
+    if(fail_cnt_buf[i]) {      
       xLogger.vAddLogMsg("MPF", i, (const char *)NULL, fail_cnt_buf[i]);
+      xCommMgr.vAddAlarm(CommManager::CM_ALARM, CommManager::CM_MODULE_IMU, MPU_FAIL_CYCLE+i, fail_cnt[i]); 
     }
   }
 }
