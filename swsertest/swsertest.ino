@@ -26,7 +26,8 @@ void loop() {
         Serial.print(va[i]);    
         Serial.print(" ");
       }
-      Serial.println();
+      Serial.print(" in ");
+      Serial.println(cmgr.GetLastTimeMs());
     }
   }
   
@@ -44,12 +45,15 @@ void loop() {
       Serial.print(va[i]);    
       Serial.print(" ");
     }
-    Serial.println();
+    Serial.print(" in ");
+    Serial.println(cmgr.GetLastTimeMs());
   }
   else 
   { 
     Serial.print("Error ");
-    Serial.println(resp);
+    Serial.print(resp);
+    Serial.print(" in ");
+    Serial.println(cmgr.GetLastTimeMs());
   }
   }
   /*

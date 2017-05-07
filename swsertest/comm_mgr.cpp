@@ -2,9 +2,24 @@
 #include <SoftwareSerial.h>
 #include "comm_mgr.h"
 
+/*
+ * 
+ >G 9%168
+<R 0,[3,1,4,0,0,0,0]%94
+ALR :3 1 4 0 0 0 0 
+>G 9%168
+<R 0,[3,1,4,0,0,0,0]%94
+ALR :3 1 4 0 0 0 0 
+>G 9%168
+<R 0,[3,1,4,0,0,0,0]%94
+ALR :3 1 4 0 0 0 0 
+>G 9%168
+<R 0,[3,1,4,0,0,0,0]%94
+ALR :3 1 4 0 0 0 0 
+>G 9%168
+<R -7
 
-//<R 0,94%159
-//1 : 0 
+ */
 
 void itoa(int n, char s[]);
 void ltoa(int32_t n, char s[]);
@@ -20,6 +35,10 @@ int CommManager::GetResultCnt() {
 
 const int16_t *CommManager::GetResultVal() {
   return val;
+}
+
+uint32_t CommManager::GetLastTimeMs() {
+  return tmo;
 }
 
 void CommManager::Init(uint32_t comm_speed, int16_t timeout) {
@@ -89,6 +108,8 @@ int CommManager::Command(char *cmd)
     }    
     if(!res) yield();
   }
+
+  tmo=millis()-t;
   
   if(bytes>=CM_BUF_SIZE) { 
     //Serial.println("OVERFLOW");
