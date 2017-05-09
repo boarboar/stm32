@@ -78,13 +78,14 @@ static void vLazyTask(void *pvParameters) {
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
         vTaskDelay(1000);
+        MpuDrv::Mpu.flushAlarms();     
         yaw=MpuDrv::Mpu.getYaw_safe(); 
         val = yaw*180.0/PI;
         xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
-       xCommMgr.vAddAlarm(CommManager::CM_INFO, CommManager::CM_MODULE_SYS, 4); //test 
+       //xCommMgr.vAddAlarm(CommManager::CM_INFO, CommManager::CM_MODULE_SYS, 4); //test 
     }
 }
 
@@ -120,7 +121,7 @@ static void vMotionTask(void *pvParameters) {
     for (;;) { 
       vTaskDelay(100); // should be less
       MpuDrv::Mpu.process_safe();     
-      MpuDrv::Mpu.flushAlarms();     
+      //MpuDrv::Mpu.flushAlarms();     
       /* 
       if(MpuDrv::Mpu.getStatus_safe()==MpuDrv::ST_READY) {
         xMotion.DoCycle();
