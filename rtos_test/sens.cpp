@@ -37,6 +37,15 @@ void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens
     Serial.println("Sensor OK");
 }
 
+bool Sensor::Acquire() {
+  return xSemaphoreTake( xSensFree, ( portTickType ) 10 ) == pdTRUE;
+}
+
+
+void Sensor::Release() {
+  xSemaphoreGive( xSensFree );
+}
+
 void Sensor::Start() {
     xLogger.vAddLogMsg("Sens module run.");
     running=true;
@@ -86,15 +95,25 @@ void Sensor::DoCycle() {
       delayMicroseconds(10);
       digitalWrite(sens_out_pin[sens_step], LOW);
       uint32_t d=pulseIn(sens_in_pin[sens_step], HIGH, 50000);
+      /*
       if ( xSemaphoreTake( xSensFree, ( portTickType ) 10 ) == pdTRUE )
       {
         if(d>0) value[current_sens]=(int16_t)(d/USENS_DIVISOR+USENS_BASE);
         else value[current_sens] = -2;
         xSemaphoreGive( xSensFree );
       }
+      */
+      if(Acquire()) 
+      {
+        if(d>0) value[current_sens]=(int16_t)(d/USENS_DIVISOR+USENS_BASE);
+        else value[current_sens] = -2;
+        Release();  
+      }
+      vTaskDelay(1);
     }
 }
 
+/*
 int16_t Sensor::Get() {  
   int ret=-2;
   if ( xSemaphoreTake( xSensFree, ( portTickType ) 10 ) == pdTRUE )
@@ -103,5 +122,17 @@ int16_t Sensor::Get() {
       xSemaphoreGive( xSensFree );
     }
   return ret;
+}
+*/
+
+int16_t Sensor::Get() {
+  return value[0];
+}
+
+
+void Sensor::Get(int16_t *v, int16_t n) {
+  if(n>M_SENS_N) n=M_SENS_N;
+  for(int i=0; i<n; i++)
+    v[i]=value[i];
 }
 

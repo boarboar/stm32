@@ -9,6 +9,9 @@ class Sensor {
     void Start();
     void DoCycle();    
     int16_t Get();
+    void Get(int16_t *v, int16_t n);
+    bool Acquire();
+    void Release();
   protected: 
     int16_t sens_in_pin[2];
     int16_t sens_out_pin[2];

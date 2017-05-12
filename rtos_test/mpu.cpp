@@ -24,6 +24,24 @@ uint8_t MpuDrv::isDataReady() { return dmpStatus==ST_READY && data_ready; }
 uint8_t MpuDrv::isNeedReset() { return need_reset; }
 void    MpuDrv::needReset() {  need_reset=true; }
 
+bool MpuDrv::Acquire() {
+  return xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE;
+}
+
+
+void MpuDrv::Release() {
+  xSemaphoreGive( xIMUFree );
+}
+
+
+int16_t MpuDrv::cycle_dt() 
+{
+  int16_t res=cycle(xTaskGetTickCount()-xLastWakeTime);          
+  xLastWakeTime=xTaskGetTickCount();
+  return res;      
+}
+
+/*
 int16_t MpuDrv::cycle_safe() 
 {
   int16_t res=-20;
@@ -66,6 +84,7 @@ int8_t MpuDrv::getStatus_safe()
       } 
   return st;    
 }
+*/
   
 /*
 int16_t MpuDrv::init(uint16_t intrp) {
@@ -175,7 +194,12 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   
   fifoCount = mpu.getFIFOCount();
   //if(fifoCount < packetSize) return 0; // ???
-  while (fifoCount < packetSize && i++<5) { fifoCount = mpu.getFIFOCount(); yield(); } 
+  //while (fifoCount < packetSize && i++<5) { fifoCount = mpu.getFIFOCount(); yield(); } 
+  while (fifoCount < packetSize && i++<5) { 
+    vTaskDelay(1);    
+    fifoCount = mpu.getFIFOCount();     
+    } 
+  
   if(fifoCount < packetSize) {
     fail_cnt[MPU_FAIL_FIFOTMO_IDX]++;
     return 0; // giveup
@@ -295,17 +319,17 @@ void MpuDrv::process() {
   q=q0.getProduct(q); // real quaternion (relative to base)
   mpu.dmpGetGravity(&gravity, &q);
   mpu.dmpGetYawPitchRoll(ypr, &q, &gravity); 
+}
 
-  //copy alarms for fludhing
+void MpuDrv::copyAlarms() {
+  //copy alarms for flushing
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
     fail_cnt_buf[i]=fail_cnt[i];
     fail_cnt[i]=0;
   }
 }
 
-void MpuDrv::flushAlarms() {
-  // flush alarms
-  //static char buf[20]; // save stack
+void MpuDrv::flushAlarms() {  
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
     if(fail_cnt_buf[i]) {      
       xLogger.vAddLogMsg("MPF", i, (const char *)NULL, fail_cnt_buf[i]);

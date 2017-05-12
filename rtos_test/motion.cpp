@@ -19,10 +19,21 @@ void Motion::Init(Motor *m) {
   vSemaphoreCreateBinary(xMotionFree);        
   bReady = false;      
   pxMotor=m;
+  fCurrYaw = 0.0f;
   Reset();
   Serial.println("Motion init OK");
 }
 
+bool Motion::Acquire() {
+  return xSemaphoreTake( xMotionFree, ( portTickType ) 10 ) == pdTRUE;
+}
+
+
+void Motion::Release() {
+  xSemaphoreGive( xMotionFree );
+}
+
+/*
 void Motion::Start() {
   xLogger.vAddLogMsg("Motion module ready");
   if ( xSemaphoreTake( xMotionFree, ( portTickType ) 10 ) == pdTRUE )
@@ -36,6 +47,15 @@ void Motion::Start() {
   // test
   pxMotor->SetMotors(50, 50);       
         
+}
+*/
+
+void Motion::Start() {
+  bReady=true;
+  xRunTime=xTaskGetTickCount();     
+  // test
+  pxMotor->SetMotors(50, 50);       
+  xLogger.vAddLogMsg("Motion module ready");      
 }
 
 void Motion::Reset() {
@@ -51,15 +71,15 @@ void Motion::Reset() {
   err_bearing_p_0=0;
   err_bearing_i=0;
   base_pow=0;
-  delta_pow=0;
+  delta_pow=0;  
 }
 
 void Motion::DoCycle(float yaw) 
 {
   float mov; //mm
   pxMotor->DoCycle();
-  fCurrYaw = yaw;
   if(!bReady) return;
+  fCurrYaw = yaw;
   //uint32_t dt=xTaskGetTickCount()-xRunTime;
   xRunTime=xTaskGetTickCount();       
   pxMotor->GetEncDist(NULL, lAdvance);
@@ -231,6 +251,7 @@ void Motion::SetMotors(int8_t dp1, int8_t dp2) // in %%
   pxMotor->SetMotors(dp1, dp2);     
 }
 
+/*
 bool Motion::GetAdvance(uint32_t *dst_dist) 
 {
   if(!dst_dist) return false;
@@ -243,5 +264,20 @@ bool Motion::GetAdvance(uint32_t *dst_dist)
     }
   return ret;
 }
+*/
+
+
+void Motion::GetAdvance(uint32_t *dst_dist) 
+{
+   dst_dist[0]=lAdvance[0];
+   dst_dist[1]=lAdvance[1];        
+}
+
+void Motion::GetCrdCm(int16_t *crd) 
+{
+   crd[0]=(int16_t)fCrd[0];
+   crd[1]=(int16_t)fCrd[1];
+}
+
 
 

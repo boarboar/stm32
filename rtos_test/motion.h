@@ -10,7 +10,10 @@ class Motion {
     void Move(int16_t tspeed);
     void Steer(int16_t angle);
     void MoveBearing(int16_t angle);
-    bool GetAdvance(uint32_t *dst_dist);
+    void GetAdvance(uint32_t *dst_dist);
+    void GetCrdCm(int16_t *crd);
+    bool Acquire();
+    void Release();
   protected:     
     void AdjustTargBearing(int16_t s, bool absolute);
     void StartRotate(int16_t tspeed);

@@ -1,5 +1,6 @@
 #include <MapleFreeRTOS821.h>
 #include "log.h"
+#include "mpu.h"
 #include "sens.h"
 #include "motor.h"
 #include "motion.h"
@@ -131,11 +132,23 @@ boolean CommManager::ProcessCommand()
         break;
       case REG_SENS:
         vcnt=1;
-        val[0]=xSensor.Get();
+        //val[0]=xSensor.Get();
+        if(xSensor.Acquire()) {
+          xSensor.Get(val, CM_NVAL);
+          xSensor.Release();
+        }
         break;
-      case REG_ENC:
-        vcnt=2;
-        //xMotor.GetEncDist(val, NULL);        
+      case REG_ALL:
+        // yaw, X, Y
+        vcnt=3;
+        if(MpuDrv::Mpu.Acquire()) {
+          val[0]=MpuDrv::Mpu.getYaw()*180.0/PI;
+          MpuDrv::Mpu.Release();
+        }
+        if(xMotion.Acquire()) {
+          xMotion.GetCrdCm(val+1); //val[1,2]
+          xMotion.Release();
+        }
         break;  
       case REG_ALARM:
         if( xQueueReceive( xAlarmQueue, &rxAlarm, ( TickType_t ) 1 ) )

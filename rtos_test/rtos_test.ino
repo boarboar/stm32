@@ -77,11 +77,19 @@ static void vLazyTask(void *pvParameters) {
     uint16_t enc[2];
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
-        vTaskDelay(1000);
+        vTaskDelay(1000);                
+        if(MpuDrv::Mpu.Acquire()) {
+          MpuDrv::Mpu.copyAlarms();     
+          yaw=MpuDrv::Mpu.getYaw(); 
+          MpuDrv::Mpu.Release();
+        } 
         MpuDrv::Mpu.flushAlarms();     
-        yaw=MpuDrv::Mpu.getYaw_safe(); 
         val = yaw*180.0/PI;
-        xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
+        if(xSensor.Acquire()) {
+          xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
+          xSensor.Release();  
+        }
+        
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
@@ -90,18 +98,27 @@ static void vLazyTask(void *pvParameters) {
 }
 
 static void vIMU_Task(void *pvParameters) {
-    int16_t mpu_res;    
+    int16_t mpu_res=0;    
     xLogger.vAddLogMsg("IMU Task started.");
     //xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, 1); //test
     for (;;) { 
       vTaskDelay(3); 
-      mpu_res = MpuDrv::Mpu.cycle_safe();       
+      if(MpuDrv::Mpu.Acquire()) {
+        mpu_res = MpuDrv::Mpu.cycle_dt();       
+        MpuDrv::Mpu.Release();
+      } else continue;
       if(mpu_res==2) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
         //xCommMgr.vAddAlarm(2, 2, 2); //test
-        xSensor.Start();     
-        xMotion.Start();             
+        if(xSensor.Acquire()) {
+          xSensor.Start();    
+          xSensor.Release();
+        }
+        if(xMotion.Acquire()) {
+          xMotion.Start();             
+          xMotion.Release();
+        }
       }
     }
 }
@@ -109,9 +126,11 @@ static void vIMU_Task(void *pvParameters) {
 static void vSensorTask(void *pvParameters) {
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
-        //vTaskDelay(1000);
         vTaskDelay(10);
-        xSensor.DoCycle();     
+        if(xSensor.Acquire()) {
+          xSensor.DoCycle();     
+          xSensor.Release();
+        }
     }
 }
 
@@ -120,14 +139,17 @@ static void vMotionTask(void *pvParameters) {
     xLogger.vAddLogMsg("Motion Task started.");    
     for (;;) { 
       vTaskDelay(100); // should be less
-      MpuDrv::Mpu.process_safe();     
-      //MpuDrv::Mpu.flushAlarms();     
-      /* 
-      if(MpuDrv::Mpu.getStatus_safe()==MpuDrv::ST_READY) {
-        xMotion.DoCycle();
+      float yaw=0;
+      if(MpuDrv::Mpu.Acquire()) {
+        MpuDrv::Mpu.process();           
+        yaw=MpuDrv::Mpu.getYaw();
+        MpuDrv::Mpu.Release();
       }
-      */
-      xMotion.DoCycle(MpuDrv::Mpu.getYaw_safe());
+      else continue;
+      if(xMotion.Acquire()) {
+         xMotion.DoCycle(yaw);
+         xMotion.Release();
+      } 
     }
 }
 
