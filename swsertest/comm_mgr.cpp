@@ -2,25 +2,6 @@
 #include <SoftwareSerial.h>
 #include "comm_mgr.h"
 
-/*
- * 
- >G 9%168
-<R 0,[3,1,4,0,0,0,0]%94
-ALR :3 1 4 0 0 0 0 
->G 9%168
-<R 0,[3,1,4,0,0,0,0]%94
-ALR :3 1 4 0 0 0 0 
->G 9%168
-<R 0,[3,1,4,0,0,0,0]%94
-ALR :3 1 4 0 0 0 0 
->G 9%168
-<R 0,[3,1,4,0,0,0,0]%94
-ALR :3 1 4 0 0 0 0 
->G 9%168
-<R -7
-
- */
-
 void itoa(int n, char s[]);
 void ltoa(int32_t n, char s[]);
 
