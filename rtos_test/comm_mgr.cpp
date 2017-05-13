@@ -131,7 +131,7 @@ boolean CommManager::ProcessCommand()
         val[0]=CM_ID;
         break;
       case REG_SENS:
-        vcnt=1;
+        vcnt=CM_NVAL;
         //val[0]=xSensor.Get();
         if(xSensor.Acquire()) {
           xSensor.Get(val, CM_NVAL);
