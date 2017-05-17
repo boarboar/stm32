@@ -63,18 +63,6 @@ void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin
     Serial.println("Motor OK");
 }
 
-/*
-void Motor::Start() {
-  xLogger.vAddLogMsg("Motor module run.");
-  if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
-    { 
-      //running=true;
-      //enc_count[0]=enc_count[1]=0;
-      xSemaphoreGive( xMotorFree );
-    }
-}
-*/
-
 void Motor::DoCycle() {
   if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {

@@ -33,23 +33,6 @@ void Motion::Release() {
   xSemaphoreGive( xMotionFree );
 }
 
-/*
-void Motion::Start() {
-  xLogger.vAddLogMsg("Motion module ready");
-  if ( xSemaphoreTake( xMotionFree, ( portTickType ) 10 ) == pdTRUE )
-    { 
-      bReady=true;
-      xSemaphoreGive( xMotionFree );
-    }
-
-  xRunTime=xTaskGetTickCount(); 
-    
-  // test
-  pxMotor->SetMotors(50, 50);       
-        
-}
-*/
-
 void Motion::Start() {
   bReady=true;
   xRunTime=xTaskGetTickCount();     
@@ -251,22 +234,6 @@ void Motion::SetMotors(int8_t dp1, int8_t dp2) // in %%
   pxMotor->SetMotors(dp1, dp2);     
 }
 
-/*
-bool Motion::GetAdvance(uint32_t *dst_dist) 
-{
-  if(!dst_dist) return false;
-  int ret=false;
-  if ( xSemaphoreTake( xMotionFree, ( portTickType ) 10 ) == pdTRUE )
-    {
-      dst_dist[0]=lAdvance[0];
-      dst_dist[1]=lAdvance[1];      
-      xSemaphoreGive( xMotionFree );
-    }
-  return ret;
-}
-*/
-
-
 void Motion::GetAdvance(uint32_t *dst_dist) 
 {
    dst_dist[0]=lAdvance[0];
@@ -279,5 +246,7 @@ void Motion::GetCrdCm(int16_t *crd)
    crd[1]=(int16_t)fCrd[1];
 }
 
-
+int16_t Motion::GetAdvanceCm() {
+  return (int16_t)((lAdvance[0]+lAdvance[1])/10);
+}
 

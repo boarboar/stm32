@@ -1,6 +1,6 @@
 
 #define CM_BUF_SIZE 64
-#define CM_NVAL     10
+#define CM_NVAL     16
 
 #define CM_ID 94
 
@@ -31,7 +31,7 @@ class CommManager {
     QueueHandle_t xAlarmQueue;
     xSemaphoreHandle xAlarmFree;
   
-    enum Regs {REG_None=0, REG_ID=1, REG_SENS=3, REG_ALL=4, REG_MOTOR_POWER=5, REG_MOVE=6, REG_STEER=7, REG_MOVE_BEAR=8, REG_ALARM=9};
+    enum Regs {REG_None=0, REG_ID=1, REG_STATUS=2, REG_SENS=3, REG_ALL=4, REG_MOTOR_POWER=5, REG_MOVE=6, REG_STEER=7, REG_MOVE_BEAR=8, REG_ALARM=9, REG_RESET=100};
     uint8_t CRC();
     int16_t ReadInt() ;        
     char buf[CM_BUF_SIZE];

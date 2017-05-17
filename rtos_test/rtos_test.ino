@@ -1,6 +1,5 @@
 
 #include <MapleFreeRTOS821.h>
-//#include <Servo.h>
 #include <Wire.h>
 #include "comm_mgr.h"
 #include "log.h"
@@ -8,6 +7,16 @@
 #include "sens.h"
 #include "motor.h"
 #include "motion.h"
+
+/*
+
+ ENC1[3]: Vcc(5v), Gnd, In(5vT)
+ ENC2[3]: Vcc(5v), Gnd, In(5vT)
+ 
+ SENS[7]: Vcc(5v), Gnd, Srv, UI1(5vT), UO1(5vT), UI2(5vT), UO2(5vT)  
+ MOTO[8]: Vcc(5v), Gnd, In1, In2, In3, In4, EN1, EN2
+ 
+ */
 
 #define BOARD_LED_PIN PC13
 
@@ -77,7 +86,7 @@ static void vLazyTask(void *pvParameters) {
     uint16_t enc[2];
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
-        vTaskDelay(1000);                
+        vTaskDelay(2000);                
         if(MpuDrv::Mpu.Acquire()) {
           MpuDrv::Mpu.copyAlarms();     
           yaw=MpuDrv::Mpu.getYaw(); 
@@ -92,15 +101,13 @@ static void vLazyTask(void *pvParameters) {
         
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
-        }
-       //xCommMgr.vAddAlarm(CommManager::CM_INFO, CommManager::CM_MODULE_SYS, 4); //test 
+        }         
     }
 }
 
 static void vIMU_Task(void *pvParameters) {
     int16_t mpu_res=0;    
     xLogger.vAddLogMsg("IMU Task started.");
-    //xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, 1); //test
     for (;;) { 
       vTaskDelay(3); 
       if(MpuDrv::Mpu.Acquire()) {
@@ -155,9 +162,12 @@ static void vMotionTask(void *pvParameters) {
 
 
 void setup() {
-    delay(5000);
+  
     digitalWrite(BOARD_LED_PIN, LOW);
     pinMode(BOARD_LED_PIN, OUTPUT);
+    
+    delay(5000);
+    disableDebugPorts(); // disable JTAG debug, enable PB3,4 for usage
       
     Serial.begin(115200); 
     Serial.print("Tick = ");

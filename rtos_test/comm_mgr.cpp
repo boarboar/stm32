@@ -130,6 +130,13 @@ boolean CommManager::ProcessCommand()
         vcnt=1;
         val[0]=CM_ID;
         break;
+      case REG_STATUS:
+        vcnt=1;
+        if(MpuDrv::Mpu.Acquire()) {
+          val[0]=MpuDrv::Mpu.getStatus();
+          MpuDrv::Mpu.Release();
+        }
+        break;  
       case REG_SENS:
         vcnt=CM_NVAL;
         //val[0]=xSensor.Get();
@@ -147,6 +154,7 @@ boolean CommManager::ProcessCommand()
         }
         if(xMotion.Acquire()) {
           xMotion.GetCrdCm(val+1); //val[1,2]
+          val[3]=xMotion.GetAdvanceCm();
           xMotion.Release();
         }
         break;  
@@ -249,7 +257,15 @@ boolean CommManager::ProcessCommand()
     case REG_MOVE_BEAR:
         if(vcnt<1) { rc=-21; break; }
         xMotion.MoveBearing(val[0]);
-        break;            
+        break;   
+    case REG_RESET:
+        // requires one parameter with fixed value of 100
+        if(vcnt<1 || val[0]!=100) { rc=-21; break; }        
+        vAddAlarm(CM_ALARM, CM_MODULE_SYS, 100);
+        xLogger.vAddLogMsg("RST");           
+        vTaskDelay(2000);                
+        nvic_sys_reset();
+        break;             
     default:;        
   }
 

@@ -94,15 +94,8 @@ void Sensor::DoCycle() {
       digitalWrite(sens_out_pin[sens_step], HIGH);
       delayMicroseconds(10);
       digitalWrite(sens_out_pin[sens_step], LOW);
-      uint32_t d=pulseIn(sens_in_pin[sens_step], HIGH, 50000);
-      /*
-      if ( xSemaphoreTake( xSensFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        if(d>0) value[current_sens]=(int16_t)(d/USENS_DIVISOR+USENS_BASE);
-        else value[current_sens] = -2;
-        xSemaphoreGive( xSensFree );
-      }
-      */
+      uint32_t d=pulseIn(sens_in_pin[sens_step], HIGH, 40000);
+
       if(Acquire()) 
       {
         if(d>0) value[current_sens]=(int16_t)(d/USENS_DIVISOR+USENS_BASE);
@@ -112,18 +105,6 @@ void Sensor::DoCycle() {
       vTaskDelay(1);
     }
 }
-
-/*
-int16_t Sensor::Get() {  
-  int ret=-2;
-  if ( xSemaphoreTake( xSensFree, ( portTickType ) 10 ) == pdTRUE )
-    {
-      ret = value[0];
-      xSemaphoreGive( xSensFree );
-    }
-  return ret;
-}
-*/
 
 int16_t Sensor::Get() {
   return value[0];

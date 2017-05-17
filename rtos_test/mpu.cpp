@@ -41,56 +41,6 @@ int16_t MpuDrv::cycle_dt()
   return res;      
 }
 
-/*
-int16_t MpuDrv::cycle_safe() 
-{
-  int16_t res=-20;
-  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        res = cycle(xTaskGetTickCount()-xLastWakeTime);          
-        xLastWakeTime=xTaskGetTickCount();
-        xSemaphoreGive( xIMUFree );
-      } 
-  return res;      
-}
-
-void MpuDrv::process_safe() 
-{
-  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        process();          
-        xSemaphoreGive( xIMUFree );
-      } 
-}
-
-float MpuDrv::getYaw_safe() 
-{
-  float yaw=0.0f;
-  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        yaw = getYaw();          
-        xSemaphoreGive( xIMUFree );
-      } 
-  return yaw;    
-}
-
-int8_t MpuDrv::getStatus_safe() 
-{
-  int8_t st=ST_0;
-  if ( xSemaphoreTake( xIMUFree, ( portTickType ) 10 ) == pdTRUE )
-      {
-        st = dmpStatus;          
-        xSemaphoreGive( xIMUFree );
-      } 
-  return st;    
-}
-*/
-  
-/*
-int16_t MpuDrv::init(uint16_t intrp) {
-  return init();
-}
-*/
 
 int16_t MpuDrv::init() {
   
@@ -262,6 +212,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   
   if(dmpStatus==ST_READY) {
      uint32_t mcs=micros();
+     /*
 #ifdef IMU_USE_INTEGRATION    
     // =======actually, this is not needed if we do not use IMU accel-based integration integration
     // integrate motion
@@ -296,6 +247,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     v.x+=a.x*ts; v.y+=a.y*ts; v.z+=a.z*ts;
 //      r.x+=v.x*ts; r.y+=v.y*ts; r.z+=v.z*ts;
 #endif
+*/
     start=mcs;
     data_ready=1; 
     return settled ? 2 : 1;
@@ -361,6 +313,7 @@ void MpuDrv::getAll(float* ypr, float* af, float* vf) {
   */
 }  
 
+/*
 void MpuDrv::DbgPrintVectorInt16(const char *s, VectorInt16 *v) {
   Serial.print(s); Serial.print(v->x); Serial.print("\t"); Serial.print(v->y); Serial.print("\t"); Serial.println(v->z);
 }
@@ -380,7 +333,7 @@ void MpuDrv::DbgPrintArr3Float(const char *s, float *q) {
   for(uint8_t i=0; i<3; i++) {Serial.print("\t"); Serial.print(q[i]);}
   Serial.println();
 }
-
+*/
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
 // ================================================================

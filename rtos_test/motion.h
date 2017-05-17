@@ -12,6 +12,7 @@ class Motion {
     void MoveBearing(int16_t angle);
     void GetAdvance(uint32_t *dst_dist);
     void GetCrdCm(int16_t *crd);
+    int16_t GetAdvanceCm();
     bool Acquire();
     void Release();
   protected:     
@@ -33,6 +34,6 @@ class Motion {
     int16_t base_pow;
     uint32_t lAdvance0[2], lAdvance[2]; // in mm
     float fCrd[2];
-    float fCurrYaw;
+    float fCurrYaw;    
 };
 

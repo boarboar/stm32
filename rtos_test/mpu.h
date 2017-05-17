@@ -26,12 +26,7 @@ public:
   static MpuDrv Mpu; // singleton  
   //int16_t init(/*uint16_t sda, uint16_t sdl,*/ uint16_t intr);
   int16_t init();
-  /*
-  int16_t cycle_safe();
-  void process_safe();
-  float getYaw_safe();
-  int8_t getStatus_safe();
-  */
+
   bool Acquire();
   void Release();
   int16_t cycle_dt();
@@ -46,10 +41,12 @@ public:
   void copyAlarms();
   void flushAlarms();
   float getYaw();
+  /*
   static void DbgPrintVectorInt16(const char *s, VectorInt16 *v);
   static void DbgPrintQInt16(const char *s, int16_t *q);
   static void DbgPrintVectorFloat(const char *s, VectorFloat *v);
   static void DbgPrintArr3Float(const char *s, float *q);
+  */
 protected:  
   MpuDrv();
   // MPU control/status vars
