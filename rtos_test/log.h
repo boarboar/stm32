@@ -1,5 +1,5 @@
 
-#define CLOG_MSG_SZ 32
+#define CLOG_MSG_SZ 64
 #define CLOG_Q_SZ 16
 
 class ComLogger {  

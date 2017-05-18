@@ -167,7 +167,7 @@ void setup() {
     pinMode(BOARD_LED_PIN, OUTPUT);
     
     delay(5000);
-    disableDebugPorts(); // disable JTAG debug, enable PB3,4 for usage
+    //disableDebugPorts(); // disable JTAG debug, enable PB3,4 for usage
       
     Serial.begin(115200); 
     Serial.print("Tick = ");
