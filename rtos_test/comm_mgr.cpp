@@ -138,10 +138,9 @@ boolean CommManager::ProcessCommand()
         }
         break;  
       case REG_SENS:
-        vcnt=10;
-        //val[0]=xSensor.Get();
         if(xSensor.Acquire()) {
-          xSensor.Get(val, 10); //!!!
+          vcnt=xSensor.GetNMeas();
+          xSensor.Get(val, vcnt);
           xSensor.Release();
         }
         break;

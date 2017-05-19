@@ -46,8 +46,8 @@
 #define US_IN_1_PIN   PB13
 #define US_OUT_1_PIN  PB12
 
-#define US_IN_2_PIN   PB4
-#define US_OUT_2_PIN  PB3
+#define US_IN_2_PIN   PB14
+#define US_OUT_2_PIN  PB15
 
 
 CommManager xCommMgr;

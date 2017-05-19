@@ -8,6 +8,7 @@ class Sensor {
     void Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens_in_pin_1, int sens_out_pin_1);    
     void Start();
     void DoCycle();    
+    int16_t GetNMeas();
     int16_t Get();
     void Get(int16_t *v, int16_t n);
     bool Acquire();

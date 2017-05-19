@@ -106,6 +106,10 @@ void Sensor::DoCycle() {
     }
 }
 
+int16_t Sensor::GetNMeas() {
+  return M_SENS_N;
+}
+
 int16_t Sensor::Get() {
   return value[0];
 }
