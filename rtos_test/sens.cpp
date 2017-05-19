@@ -38,7 +38,7 @@ void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens
 }
 
 bool Sensor::Acquire() {
-  return xSemaphoreTake( xSensFree, ( portTickType ) 10 ) == pdTRUE;
+  return xSemaphoreTake( xSensFree, ( portTickType ) 50 ) == pdTRUE;
 }
 
 
