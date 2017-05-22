@@ -146,15 +146,22 @@ boolean CommManager::ProcessCommand()
         break;
       case REG_ALL:
         // yaw, X, Y
-        vcnt=3;
+        vcnt=0;
         if(MpuDrv::Mpu.Acquire()) {
           val[0]=MpuDrv::Mpu.getYaw()*180.0/PI;
+          vcnt++;
           MpuDrv::Mpu.Release();
         }
         if(xMotion.Acquire()) {
           xMotion.GetCrdCm(val+1); //val[1,2]
           val[3]=xMotion.GetAdvanceCm();
+          vcnt+=3;
           xMotion.Release();
+        }
+        if(xSensor.Acquire()) {
+          xSensor.Get(val+vcnt, vcnt);
+          vcnt+=xSensor.GetNMeas();          
+          xSensor.Release();
         }
         break;  
       case REG_ALARM:

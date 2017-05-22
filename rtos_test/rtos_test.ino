@@ -134,10 +134,7 @@ static void vSensorTask(void *pvParameters) {
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(10);
-        if(xSensor.Acquire()) {
-          xSensor.DoCycle();     
-          xSensor.Release();
-        }
+        xSensor.DoCycle();     
     }
 }
 

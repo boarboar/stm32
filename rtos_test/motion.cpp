@@ -36,8 +36,6 @@ void Motion::Release() {
 void Motion::Start() {
   bReady=true;
   xRunTime=xTaskGetTickCount();     
-  // test
-  pxMotor->SetMotors(50, 50);       
   xLogger.vAddLogMsg("Motion module ready");      
 }
 
