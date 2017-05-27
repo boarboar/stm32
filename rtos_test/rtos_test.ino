@@ -13,7 +13,7 @@
  ENC1[3]: Vcc(5v), Gnd, In(5vT)
  ENC2[3]: Vcc(5v), Gnd, In(5vT)
  
- SENS[7]: Vcc(5v), Gnd, Srv, UI1(5vT), UO1(5vT), UI2(5vT), UO2(5vT)  
+ SENS[7]: Vcc(5v), Gnd, UI1(5vT), UO1(5vT), UI2(5vT), UO2(5vT), Srv 
  MOTO[8]: Vcc(5v), Gnd, In1, In2, In3, In4, EN1, EN2
  
  */
