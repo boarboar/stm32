@@ -93,6 +93,7 @@ static void vLazyTask(void *pvParameters) {
           MpuDrv::Mpu.Release();
         } 
         MpuDrv::Mpu.flushAlarms();     
+        /*
         val = yaw*180.0/PI;
         if(xSensor.Acquire()) {
           xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
@@ -101,7 +102,19 @@ static void vLazyTask(void *pvParameters) {
         
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
-        }         
+        }
+        */
+        if(xSensor.Acquire()) {
+          int16_t vcnt=xSensor.GetNMeas();
+          int16_t val[16];
+          xSensor.Get(val, vcnt);
+          xLogger.vAddLogMsg("S[1-3]", val[0], val[1], val[2]);           
+          xLogger.vAddLogMsg("S[4-6]", val[3], val[4], val[5]);           
+          xLogger.vAddLogMsg("S[7-9]", val[6], val[7], val[8]);            
+          xLogger.vAddLogMsg("S[10]", val[9]);
+          xSensor.Release();  
+        }
+                 
     }
 }
 
