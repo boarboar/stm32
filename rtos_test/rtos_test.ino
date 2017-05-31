@@ -46,8 +46,8 @@
 #define US_IN_1_PIN   PB13
 #define US_OUT_1_PIN  PB12
 
-#define US_IN_2_PIN   PB14
-#define US_OUT_2_PIN  PB15
+#define US_IN_2_PIN   PB15
+#define US_OUT_2_PIN  PB14
 
 
 CommManager xCommMgr;
@@ -144,6 +144,7 @@ static void vIMU_Task(void *pvParameters) {
 }
 
 static void vSensorTask(void *pvParameters) {
+    //xSensor.Start();
     xLogger.vAddLogMsg("Sensor Task started.");
     for (;;) {
         vTaskDelay(10);
