@@ -115,7 +115,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   bool settled=false;
   if (dmpStatus==ST_0 || dmpStatus==ST_FAIL) return -1;
 
-  if(data_ready && (micros()-start)/1000000L>1) {
+  if(data_ready && (micros()-start)/1000000L>1) { // micros()-start  = NEED TO BE FIXED!!!!
     // no data from MPU after 1sec
     //xLogger.vAddLogMsg("MPU - no data in 1s!");
     need_reset=1;

@@ -43,11 +43,11 @@
 #define MOTOR_ENC_1_PIN  PB8
 #define MOTOR_ENC_2_PIN  PB9
 
-#define US_IN_1_PIN   PB13
-#define US_OUT_1_PIN  PB12
+#define US_IN_1_PIN   PB12
+#define US_OUT_1_PIN  PB13
 
-#define US_IN_2_PIN   PB15
-#define US_OUT_2_PIN  PB14
+#define US_IN_2_PIN   PB14
+#define US_OUT_2_PIN  PB15
 
 
 CommManager xCommMgr;
@@ -93,8 +93,9 @@ static void vLazyTask(void *pvParameters) {
           MpuDrv::Mpu.Release();
         } 
         MpuDrv::Mpu.flushAlarms();     
-        /*
         val = yaw*180.0/PI;
+        xLogger.vAddLogMsg("Y", val);    
+        /*      
         if(xSensor.Acquire()) {
           xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
           xSensor.Release();  
@@ -217,7 +218,7 @@ void setup() {
                 "TaskSens",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 2, // max
+                tskIDLE_PRIORITY + 4, // max
                 NULL);
                   
     xTaskCreate(vIMU_Task,
