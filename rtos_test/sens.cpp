@@ -3,7 +3,8 @@
 #include "log.h"
 
 #define SERVO_STEP    36
-#define SERVO_ZERO_SHIFT    3
+//#define SERVO_ZERO_SHIFT    3
+#define SERVO_ZERO_SHIFT    10
 #define SERVO_CORR    2
 /*
 // actual USENS_DIVISOR constant should be 58.138, but we make correction for angle
@@ -87,7 +88,7 @@ void Sensor::DoCycle() {
     int16_t sservo_angle=90-SERVO_ZERO_SHIFT+sservo_pos*SERVO_STEP+abs(sservo_pos)*SERVO_CORR;
     vTaskDelay(1);
     xServo.write(sservo_angle);
-    vTaskDelay(50);
+    vTaskDelay(200);
     for(uint16_t sens_step=0; sens_step<2; sens_step++) {  
       int8_t current_sens=-sservo_pos+SERVO_NSTEPS+sens_step*(SERVO_NSTEPS*2+1); 
       digitalWrite(sens_out_pin[sens_step], LOW);
