@@ -10,6 +10,9 @@
 #define G_SCALE (G_FORCE/SCALE_A)
 #define A_K 0.3f
 
+// MPF 2
+// MPF 3
+
 extern ComLogger xLogger;
 extern CommManager xCommMgr;
 
@@ -94,7 +97,7 @@ int16_t MpuDrv::init() {
     // enter warmup/convergence stage 
     dmpStatus=ST_WUP;
     //start=millis();
-    xLastWakeTime=xTaskGetTickCount();
+    xStart=xLastWakeTime=xTaskGetTickCount();
     xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_INIT, 0); 
     xLogger.vAddLogMsg("DMP ok!"); //Serial.println(packetSize);    
   } else {
@@ -192,10 +195,10 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
       conv_count++;
       //if((millis()-start)/1000 > INIT_PERIOD_MIN && conv_count>3) settled=true;             
-      if((xTaskGetTickCount()-xLastWakeTime)/1000L > INIT_PERIOD_MIN && conv_count>3) settled=true;             
+      if((xTaskGetTickCount()-xStart)/1000L > INIT_PERIOD_MIN && conv_count>3) settled=true;             
     } else conv_count=0;  
    //if((millis()-start)/1000 > INIT_PERIOD_MAX) {
-   if((xTaskGetTickCount()-xLastWakeTime)/1000L > INIT_PERIOD_MAX) {
+   if((xTaskGetTickCount()-xStart)/1000L > INIT_PERIOD_MAX) {
       xLogger.vAddLogMsg("MPU Failed to converge");
       xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_CONVTMO, -1); 
       settled=true;      

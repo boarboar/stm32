@@ -75,8 +75,7 @@ protected:
   volatile uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
   */
   xSemaphoreHandle xIMUFree;
-  TickType_t xLastWakeTime;
-  //TickType_t xTicks;
+  TickType_t xLastWakeTime, xStart;
 };
 
 #endif /* _UMP_MPU_H_ */
