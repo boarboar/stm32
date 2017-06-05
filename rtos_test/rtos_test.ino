@@ -218,7 +218,7 @@ void setup() {
                 "TaskSens",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 4, // max
+                tskIDLE_PRIORITY + 2, // max
                 NULL);
                   
     xTaskCreate(vIMU_Task,

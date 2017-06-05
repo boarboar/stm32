@@ -51,7 +51,7 @@ protected:
   MpuDrv();
   // MPU control/status vars
   MPU6050 mpu;
-  uint32_t start;
+  //uint32_t start;
   int8_t dmpStatus; 
   uint8_t data_ready;
   uint8_t need_reset;
@@ -76,6 +76,7 @@ protected:
   */
   xSemaphoreHandle xIMUFree;
   TickType_t xLastWakeTime;
+  //TickType_t xTicks;
 };
 
 #endif /* _UMP_MPU_H_ */

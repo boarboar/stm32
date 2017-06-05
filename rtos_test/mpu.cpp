@@ -93,7 +93,8 @@ int16_t MpuDrv::init() {
     packetSize = mpu.dmpGetFIFOPacketSize();
     // enter warmup/convergence stage 
     dmpStatus=ST_WUP;
-    start=millis();
+    //start=millis();
+    xLastWakeTime=xTaskGetTickCount();
     xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_INIT, 0); 
     xLogger.vAddLogMsg("DMP ok!"); //Serial.println(packetSize);    
   } else {
@@ -106,6 +107,7 @@ int16_t MpuDrv::init() {
     dmpStatus = ST_FAIL;
     xCommMgr.vAddAlarm(CommManager::CM_ALARM, CommManager::CM_MODULE_IMU, MPU_FAIL_INIT, -1);
     need_reset=1;
+    
   }
   return dmpStatus;
 }
@@ -115,7 +117,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   bool settled=false;
   if (dmpStatus==ST_0 || dmpStatus==ST_FAIL) return -1;
 
-  if(data_ready && (micros()-start)/1000000L>1) { // micros()-start  = NEED TO BE FIXED!!!!
+  //if(data_ready && (micros()-start)/1000000L>1) { // micros()-start  = NEED TO BE FIXED!!!!
+  if(data_ready && (xTaskGetTickCount()-xLastWakeTime)/1000L>1) { 
     // no data from MPU after 1sec
     //xLogger.vAddLogMsg("MPU - no data in 1s!");
     need_reset=1;
@@ -188,9 +191,11 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
    xCommMgr.vAddAlarm(CommManager::CM_INFO, CommManager::CM_MODULE_IMU, MPU_EVENT_CONV_PROG, qe, ae);       
    if(qe<QUAT_INIT_TOL && ae<ACC_INIT_TOL) {
       conv_count++;
-      if((millis()-start)/1000 > INIT_PERIOD_MIN && conv_count>3) settled=true;                  
+      //if((millis()-start)/1000 > INIT_PERIOD_MIN && conv_count>3) settled=true;             
+      if((xTaskGetTickCount()-xLastWakeTime)/1000L > INIT_PERIOD_MIN && conv_count>3) settled=true;             
     } else conv_count=0;  
-   if((millis()-start)/1000 > INIT_PERIOD_MAX) {
+   //if((millis()-start)/1000 > INIT_PERIOD_MAX) {
+   if((xTaskGetTickCount()-xLastWakeTime)/1000L > INIT_PERIOD_MAX) {
       xLogger.vAddLogMsg("MPU Failed to converge");
       xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_CONVTMO, -1); 
       settled=true;      
@@ -201,9 +206,9 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
         
    if(settled) {
       xLogger.vAddLogMsg("MPU converged");
-      start=micros();
+      //start=micros();
       dmpStatus=ST_READY;        
-      xLastWakeTime=xTaskGetTickCount();
+      //xLastWakeTime=xTaskGetTickCount();
       xCommMgr.vAddAlarm(CommManager::CM_EVENT, CommManager::CM_MODULE_IMU, MPU_FAIL_CONVTMO, 0);       
      }
   } // warmup
@@ -211,7 +216,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   count++; 
   
   if(dmpStatus==ST_READY) {
-     uint32_t mcs=micros();
+     //uint32_t mcs=micros();
      /*
 #ifdef IMU_USE_INTEGRATION    
     // =======actually, this is not needed if we do not use IMU accel-based integration integration
@@ -248,7 +253,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
 //      r.x+=v.x*ts; r.y+=v.y*ts; r.z+=v.z*ts;
 #endif
 */
-    start=mcs;
+    //start=mcs;
     data_ready=1; 
     return settled ? 2 : 1;
   }      
