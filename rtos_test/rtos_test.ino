@@ -105,15 +105,18 @@ static void vLazyTask(void *pvParameters) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
         */
+        int16_t vcnt=0;
+        int16_t val[16];
         if(xSensor.Acquire()) {
-          int16_t vcnt=xSensor.GetNMeas();
-          int16_t val[16];
+          vcnt=xSensor.GetNMeas();
           xSensor.Get(val, vcnt);
+          xSensor.Release();  
+        }
+        if(vcnt>0) {
           xLogger.vAddLogMsg("S[1-3]", val[0], val[1], val[2]);           
           xLogger.vAddLogMsg("S[4-6]", val[3], val[4], val[5]);           
           xLogger.vAddLogMsg("S[7-9]", val[6], val[7], val[8]);            
-          xLogger.vAddLogMsg("S[10]", val[9]);
-          xSensor.Release();  
+          xLogger.vAddLogMsg("S[10]", val[9]);          
         }
                  
     }

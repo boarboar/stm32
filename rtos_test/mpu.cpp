@@ -149,7 +149,8 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
   if (!(mpuIntStatus & 0x02) && (fifoCount < packetSize) ) return 0; // nothing to read
   
   fifoCount = mpu.getFIFOCount();
-  //if(fifoCount < packetSize) return 0; // ???
+  if(fifoCount < packetSize) return 0; // ???
+  /*
   //while (fifoCount < packetSize && i++<5) { fifoCount = mpu.getFIFOCount(); yield(); } 
   while (fifoCount < packetSize && i++<5) { 
     vTaskDelay(1);    
@@ -160,6 +161,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     fail_cnt[MPU_FAIL_FIFOTMO_IDX]++;
     return 0; // giveup
   }
+  */
   // read a packet from FIFO
   mpu.getFIFOBytes(fifoBuffer, packetSize);
   //mpu.resetFIFO(); fifoCount=0; // this is in case of overflows... 
