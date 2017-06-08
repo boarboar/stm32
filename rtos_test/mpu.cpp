@@ -295,7 +295,7 @@ void MpuDrv::flushAlarms() {
   for(int i=0; i<MPU_FAIL_CNT_SZ; i++) {
     if(fail_cnt_buf[i]) {      
       xLogger.vAddLogMsg("MPF", i, (const char *)NULL, fail_cnt_buf[i]);
-      xCommMgr.vAddAlarm(CommManager::CM_ALARM, CommManager::CM_MODULE_IMU, MPU_FAIL_CYCLE+i, fail_cnt[i]); 
+      xCommMgr.vAddAlarm(CommManager::CM_ALARM, CommManager::CM_MODULE_IMU, MPU_FAIL_CYCLE+i, fail_cnt_buf[i]); 
     }
   }
 }

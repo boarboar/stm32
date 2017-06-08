@@ -94,10 +94,12 @@ static void vLazyTask(void *pvParameters) {
     float yaw; 
     int16_t val;
     uint16_t enc[2];
+    uint8_t needReset=0;
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
         vTaskDelay(2000);                
         if(MpuDrv::Mpu.Acquire()) {
+          needReset=MpuDrv::Mpu.isNeedReset();
           MpuDrv::Mpu.copyAlarms();     
           yaw=MpuDrv::Mpu.getYaw(); 
           MpuDrv::Mpu.Release();
@@ -128,7 +130,13 @@ static void vLazyTask(void *pvParameters) {
           xLogger.vAddLogMsg("S[7-9]", val[6], val[7], val[8]);            
           xLogger.vAddLogMsg("S[10]", val[9]);          
         }
-                 
+
+       if(needReset) {
+          xCommMgr.vAddAlarm(CommManager::CM_ALARM, CommManager::CM_MODULE_SYS, 101);
+          xLogger.vAddLogMsg("IMURST");           
+          vTaskDelay(2000);                
+          nvic_sys_reset();          
+       }
     }
 }
 
@@ -144,7 +152,6 @@ static void vIMU_Task(void *pvParameters) {
       if(mpu_res==2) {
         // IMU settled
         xLogger.vAddLogMsg("Activate motion!");
-        //xCommMgr.vAddAlarm(2, 2, 2); //test
         if(xSensor.Acquire()) {
           xSensor.Start();    
           xSensor.Release();
