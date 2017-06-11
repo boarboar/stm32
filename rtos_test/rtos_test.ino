@@ -112,11 +112,11 @@ static void vLazyTask(void *pvParameters) {
           xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
           xSensor.Release();  
         }
-        
+        */
         if (xMotor.GetEncDist(enc, NULL)) {
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
-        */
+        
         int16_t vcnt=0;
         int16_t val[16];
         if(xSensor.Acquire()) {

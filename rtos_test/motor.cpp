@@ -125,14 +125,16 @@ bool Motor::GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist) {
 
 void Motor::encInterrupt(uint16_t i)  {  
   uint8_t v=digitalRead(m[i].pin_enc);
-
-  if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
+  // separate semaphores
+  //if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
-      if (v!=m[i].enc_prev_st) {
+      // add debounces
+      if (v!=m[i].enc_prev_st) 
+      {
         m[i].enc_prev_st=v;
         m[i].enc_count++;
       }     
-      xSemaphoreGive( xMotorFree );
+ //     xSemaphoreGive( xMotorFree );
     }
  }
 
