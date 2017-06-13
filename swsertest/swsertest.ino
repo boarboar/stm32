@@ -2,17 +2,6 @@
 #include "comm_mgr.h"
 
 
-/*
- * 
-GET
->G 3%214
-<R 0,[104,104,105,107,104,375,373,373,376,373]%63
-10 : 104 104 105 107 104 375 373 373 376 373  in 7
-GET
->G 4%85
-<R 0,[-12,-16,75,15,104,104,105,107,376,373,0,0,0,0]%77
-14 : -12 -16 75 15 104 104 105 107 376 373 0 0 0 0  in 12
- */
 CommManager cmgr;
 
 void checkAlarm() {
@@ -89,11 +78,15 @@ void doCmd() {
         case '2' :  
         case '3' :  
         case '4' :  
-        case 'a' :  
           Serial.println("GET");
           reg=c-'0';
           doSet=false;          
           break;   
+        case 'a' :  
+          Serial.println("GET");
+          reg=10;
+          doSet=false;          
+          break;     
         default:;  
       }
       if(reg) {
