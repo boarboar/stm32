@@ -89,6 +89,7 @@ void doCmd() {
         case '2' :  
         case '3' :  
         case '4' :  
+        case 'a' :  
           Serial.println("GET");
           reg=c-'0';
           doSet=false;          

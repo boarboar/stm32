@@ -113,7 +113,7 @@ static void vLazyTask(void *pvParameters) {
           xSensor.Release();  
         }
         */
-        if (xMotor.GetEncDist(enc, NULL)) {
+        if (xMotor.GetEncDist(enc, NULL)) { // BAD!!!
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
         

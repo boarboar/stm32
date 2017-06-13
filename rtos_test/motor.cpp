@@ -8,22 +8,24 @@
 #define   WHEEL_CHGSTATES 40
 #define   WHEEL_RAD_MM   33 // measured 32
 #define   CHGST_TO_MM(CNT)  ((uint64_t)(CNT)*V_NORM_PI2*WHEEL_RAD_MM/WHEEL_CHGSTATES/V_NORM)
+#define   WHEEL_MAX_CHGST_TIME  5 //5 ms = 200 chst sec = 1 m/s
+
 extern ComLogger xLogger;
 
 static Motor *motor_instance=NULL;  
 
 static void encodeInterrupt_1() { 
-  static portBASE_TYPE xHigherPriorityTaskWoken1;
-  xHigherPriorityTaskWoken1 = pdFALSE;
+  //static portBASE_TYPE xHigherPriorityTaskWoken1;
+  //xHigherPriorityTaskWoken1 = pdFALSE;
   if(motor_instance) motor_instance->encInterrupt(0); 
-  portEND_SWITCHING_ISR( xHigherPriorityTaskWoken1 );
+  //portEND_SWITCHING_ISR( xHigherPriorityTaskWoken1 );
   }
   
 static void encodeInterrupt_2() { 
-  static portBASE_TYPE xHigherPriorityTaskWoken2;
-  xHigherPriorityTaskWoken2 = pdFALSE;
+  //static portBASE_TYPE xHigherPriorityTaskWoken2;
+  //xHigherPriorityTaskWoken2 = pdFALSE;
   if(motor_instance) motor_instance->encInterrupt(1); 
-  portEND_SWITCHING_ISR( xHigherPriorityTaskWoken2 );
+  //portEND_SWITCHING_ISR( xHigherPriorityTaskWoken2 );
   }
 
 void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin, int m_2_1_pin, int m_2_2_pin, int m_2_enab_pin, int m_2_enc_pin) {
@@ -43,20 +45,26 @@ void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin
       pinMode(m[i].pin_1, OUTPUT);     
       pinMode(m[i].pin_2, OUTPUT);
       pinMode(m[i].pin_enab, PWM);
-      pinMode(m[i].pin_enc, INPUT_PULLUP);
+      //pinMode(m[i].pin_enc, INPUT_PULLUP);
+      pinMode(m[i].pin_enc, INPUT);
       m[i].enc_count=0;
       m[i].enc_accum=0;
       //m[i].dist=0;
       m[i].enc_prev_st=digitalRead(m[i].pin_enc);
       m[i].dir=0;
       m[i].power=0;
+      m[i].xLastWakeTime=0;
       Low_Drive(i);
     }
     
     motor_instance = this;
-
+    /*
     attachInterrupt(m[0].pin_enc, encodeInterrupt_1, CHANGE);
     attachInterrupt(m[1].pin_enc, encodeInterrupt_2, CHANGE);
+    */
+
+    attachInterrupt(m[0].pin_enc, encodeInterrupt_1, RISING);
+    attachInterrupt(m[1].pin_enc, encodeInterrupt_2, RISING);
     
     //running = false;
       
@@ -123,16 +131,21 @@ bool Motor::GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist) {
 }
 
 
-void Motor::encInterrupt(uint16_t i)  {  
-  uint8_t v=digitalRead(m[i].pin_enc);
+void Motor::encInterrupt(uint16_t i)  { 
+  static TickType_t xLastWakeTime[2];
+  static uint8_t v[2];
+  xLastWakeTime[i]=xTaskGetTickCountFromISR(); 
+  //uint8_t v=digitalRead(m[i].pin_enc);
+  v[i]=digitalRead(m[i].pin_enc);
   // separate semaphores
   //if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
       // add debounces
-      if (v!=m[i].enc_prev_st) 
+      if (v[i]!=m[i].enc_prev_st && (xLastWakeTime[i] >= m[i].xLastWakeTime+WHEEL_MAX_CHGST_TIME)) 
       {
-        m[i].enc_prev_st=v;
+        m[i].enc_prev_st=v[i];
         m[i].enc_count++;
+        m[i].xLastWakeTime=xLastWakeTime[i];
       }     
  //     xSemaphoreGive( xMotorFree );
     }

@@ -137,6 +137,12 @@ boolean CommManager::ProcessCommand()
           MpuDrv::Mpu.Release();
         }
         break;  
+      case REG_ENC:
+        vcnt=2;
+        if (xMotor.GetEncDist((uint16_t*)val, NULL)) { //BAD !!!
+          ;
+        }
+        break;    
       case REG_SENS:
         if(xSensor.Acquire()) {
           vcnt=xSensor.GetNMeas();
@@ -159,8 +165,9 @@ boolean CommManager::ProcessCommand()
           xMotion.Release();
         }
         if(xSensor.Acquire()) {
-          xSensor.Get(val+vcnt, vcnt);
-          vcnt+=xSensor.GetNMeas();          
+          uint16_t nmeas=xSensor.GetNMeas();          
+          xSensor.Get(val+vcnt, nmeas);
+          vcnt+=nmeas;          
           xSensor.Release();
         }
         break;  

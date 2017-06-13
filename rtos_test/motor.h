@@ -16,6 +16,7 @@ class Motor {
       uint8_t enc_prev_st;
       int8_t dir;
       uint16_t power;
+      TickType_t xLastWakeTime;
     } m[2];
     xSemaphoreHandle xMotorFree;
     //bool running;
