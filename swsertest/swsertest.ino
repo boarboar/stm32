@@ -126,38 +126,11 @@ void setup() {
 void loop() {
   //int resp;
 
-  if(millis()-t > 5000) {     
+  if(millis()-t > 10000) {     
     checkAlarm();
     t=millis();
   }
   
   doCmd();
   
-  /*
-  for(int ireg=1; ireg<=4; ireg++) { 
-  delay(5000);
-  resp=cmgr.Get(ireg);
-  if(resp==0) 
-  {
-    int n=cmgr.GetResultCnt();
-    const int16_t *va=cmgr.GetResultVal();
-    Serial.print(n);
-    Serial.print(" : ");
-  
-    for(int i=0; i<n; i++) {
-      Serial.print(va[i]);    
-      Serial.print(" ");
-    }
-    Serial.print(" in ");
-    Serial.println(cmgr.GetLastTimeMs());
-  }
-  else 
-  { 
-    Serial.print("Error ");
-    Serial.print(resp);
-    Serial.print(" in ");
-    Serial.println(cmgr.GetLastTimeMs());
-  }
-  }  
-  */
 }

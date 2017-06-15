@@ -6,6 +6,8 @@ class Motor {
     void SetMotors(int8_t dp1, int8_t dp2);
     bool GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist);
     void encInterrupt(uint16_t i);
+    bool Acquire();
+    void Release();
   protected: 
     void Low_Drive(uint8_t i); 
     struct {

@@ -18,16 +18,6 @@
  
  */
 
- /*
-  * 
-188 : G 9%168
-189 : % G 9->R 0,[1,1,6,0,0,0,0]%131
-190 : G 9%168
-191 : % G 9->R 0,[1,1,6,0,0,0,0]%131
-192 : G 9%168
-
-  */
-
 #define BOARD_LED_PIN PC13
 
 // Serial MCU comm
@@ -109,11 +99,13 @@ static void vLazyTask(void *pvParameters) {
         xLogger.vAddLogMsg("Y", val);    
         /*      
         if(xSensor.Acquire()) {
-          xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           
+          xLogger.vAddLogMsg("Y", val, "S", xSensor.Get());           // BAD!!!
           xSensor.Release();  
         }
         */
-        if (xMotor.GetEncDist(enc, NULL)) { // BAD!!!
+        if (xMotor.Acquire()) { 
+          xMotor.GetEncDist(enc, NULL);
+          xMotor.Release();
           xLogger.vAddLogMsg("E1", enc[0], "E2", enc[1]);           
         }
         

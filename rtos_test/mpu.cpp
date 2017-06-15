@@ -141,7 +141,7 @@ int16_t MpuDrv::cycle(uint16_t /*dt*/) {
     // reset so we can continue cleanly
     mpu.resetFIFO();
     fifoCount=0;
-    fail_cnt[MPU_FAIL_FIFOOVFL_IDX]++;
+    //fail_cnt[MPU_FAIL_FIFOOVFL_IDX]++;  // overfloods with the alarms
     return -2;
   } 
   // otherwise, check for DMP data ready interrupt (this should happen frequently)

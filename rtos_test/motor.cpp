@@ -58,27 +58,31 @@ void Motor::Init(int m_1_1_pin, int m_1_2_pin, int m_1_enab_pin, int m_1_enc_pin
     }
     
     motor_instance = this;
-    /*
-    attachInterrupt(m[0].pin_enc, encodeInterrupt_1, CHANGE);
-    attachInterrupt(m[1].pin_enc, encodeInterrupt_2, CHANGE);
-    */
 
     attachInterrupt(m[0].pin_enc, encodeInterrupt_1, RISING);
-    attachInterrupt(m[1].pin_enc, encodeInterrupt_2, RISING);
-    
-    //running = false;
-      
+    attachInterrupt(m[1].pin_enc, encodeInterrupt_2, RISING);    
+    //running = false;      
     Serial.println("Motor OK");
 }
 
+
+bool Motor::Acquire() {
+  return xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE;
+}
+
+
+void Motor::Release() {
+  xSemaphoreGive( xMotorFree );
+}
+
 void Motor::DoCycle() {
-  if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
+//  if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
       for(int i=0; i<2; i++) {
-        m[i].enc_accum+=m[i].enc_count;
+        m[i].enc_accum+=m[i].enc_count; // should be locked internally and done by intermediate var
         m[i].enc_count=0;       
       }
-      xSemaphoreGive( xMotorFree );
+//      xSemaphoreGive( xMotorFree );
     }
 }
 
@@ -100,34 +104,23 @@ void Motor::SetMotors(int8_t dp1, int8_t dp2) {
     else if(dp[i]>0) {d[i]=1; p[i]=dp[i]; }
     else {d[i]=-1; p[i]=-dp[i]; }
     p[i]*=655;
+    if(m[i].dir!=d[i] || m[i].power!=p[i]) {
+       m[i].dir=d[i]; 
+       m[i].power=p[i];
+       Low_Drive(i); 
+       xLogger.vAddLogMsg("M:", i, d[i], p[1]);
+     }
+
   }      
   
-  if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
-    {      
-      for(i=0; i<2; i++) {
-        if(m[i].dir!=d[i] || m[i].power!=p[i]) {
-          m[i].dir=d[i]; 
-          m[i].power=p[i];
-          Low_Drive(i); 
-          xLogger.vAddLogMsg("M:", i, d[i], p[1]);
-        }
-      }
-      xSemaphoreGive( xMotorFree );
-    }
 }
 
 bool Motor::GetEncDist(uint16_t *dst_enc, uint32_t *dst_dist) {  
-  int ret=false;
-  if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
-    {
-      for(int i=0; i<2; i++) {
-        if(dst_enc) dst_enc[i]=m[i].enc_accum;
-        if(dst_dist) dst_dist[i]= (CHGST_TO_MM(m[i].enc_accum));
-      }      
-      ret = true;
-      xSemaphoreGive( xMotorFree );
+  for(int i=0; i<2; i++) {
+     if(dst_enc) dst_enc[i]=m[i].enc_accum;
+     if(dst_dist) dst_dist[i]= (CHGST_TO_MM(m[i].enc_accum));
     }
-  return ret;
+  return true;
 }
 
 
@@ -138,12 +131,21 @@ void Motor::encInterrupt(uint16_t i)  {
   //uint8_t v=digitalRead(m[i].pin_enc);
   v[i]=digitalRead(m[i].pin_enc);
   // separate semaphores
+
+/*
+  xSemaphoreTakeFromISR
+      (
+        SemaphoreHandle_t xSemaphore,
+        signed BaseType_t *pxHigherPriorityTaskWoken
+      )
+  */
+      
   //if ( xSemaphoreTake( xMotorFree, ( portTickType ) 10 ) == pdTRUE )
     {
       // add debounces
       if (v[i]!=m[i].enc_prev_st && (xLastWakeTime[i] >= m[i].xLastWakeTime+WHEEL_MAX_CHGST_TIME)) 
       {
-        m[i].enc_prev_st=v[i];
+        m[i].enc_prev_st=v[i]; 
         m[i].enc_count++;
         m[i].xLastWakeTime=xLastWakeTime[i];
       }     

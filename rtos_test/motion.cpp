@@ -62,8 +62,11 @@ void Motion::DoCycle(float yaw)
   if(!bReady) return;
   fCurrYaw = yaw;
   //uint32_t dt=xTaskGetTickCount()-xRunTime;
-  xRunTime=xTaskGetTickCount();       
-  pxMotor->GetEncDist(NULL, lAdvance);
+  xRunTime=xTaskGetTickCount(); 
+  if(pxMotor->Acquire()) {      
+    pxMotor->GetEncDist(NULL, lAdvance);
+    pxMotor->Release();
+  }
   mov=((lAdvance[0]-lAdvance0[0])+(lAdvance[1]-lAdvance0[1]))*0.5f;
   lAdvance0[0]=lAdvance[0];
   lAdvance0[1]=lAdvance[1];
@@ -229,7 +232,10 @@ void Motion::SetPowerRotate(int16_t dir, int16_t *p) {
 void Motion::SetMotors(int8_t dp1, int8_t dp2) // in %%
 {
   if(!bReady) return;
-  pxMotor->SetMotors(dp1, dp2);     
+  if(pxMotor->Acquire()) {
+    pxMotor->SetMotors(dp1, dp2);     
+    pxMotor->Release();
+  }
 }
 
 void Motion::GetAdvance(uint32_t *dst_dist) 
