@@ -3,6 +3,7 @@
 
 
 CommManager cmgr;
+boolean checkalr=false;
 
 void checkAlarm() {
   while(cmgr.Get(9)==0) { // alarm
@@ -86,7 +87,11 @@ void doCmd() {
           Serial.println("GET");
           reg=10;
           doSet=false;          
-          break;     
+          break;    
+        case '@':
+          checkalr=!checkalr;
+          Serial.print("ALR ");  
+          Serial.println(checkalr);
         default:;  
       }
       if(reg) {
@@ -127,7 +132,8 @@ void loop() {
   //int resp;
 
   if(millis()-t > 10000) {     
-    checkAlarm();
+    if(checkalr)
+      checkAlarm();
     t=millis();
   }
   
