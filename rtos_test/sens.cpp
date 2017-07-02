@@ -101,7 +101,8 @@ void Sensor::DoCycle() {
       digitalWrite(pin_out, HIGH);
       delayMicroseconds(10);
       digitalWrite(pin_out, LOW);
-      uint32_t d=pulseIn(pin_in, HIGH, 50000);
+      //taskEXIT_CRITICAL();
+      uint32_t d=pulseIn(pin_in, HIGH, 30000);
       taskEXIT_CRITICAL();
       vTaskDelay(1);
       if(Acquire()) 
