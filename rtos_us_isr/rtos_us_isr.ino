@@ -7,9 +7,12 @@
 #define US_OUT_PIN  PB13
 
 volatile uint32_t di=0;
+static TaskHandle_t xTaskToNotify = NULL;
 
 
 static void intr() {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
   static uint32_t t0=0;
   uint16_t v=digitalRead(US_IN_PIN);
   if(v==HIGH) {
@@ -17,7 +20,25 @@ static void intr() {
     di=0;
   } else {
     di=micros()-t0;
+    
+    /* At this point xTaskToNotify should not be NULL as a transmission was
+    in progress. */
+    configASSERT( xTaskToNotify != NULL );
+
+    /* Notify the task that the transmission is complete. */
+    vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
+
+    /* There are no transmissions in progress, so no tasks to notify. */
+    xTaskToNotify = NULL;
+
   }
+
+     /* If xHigherPriorityTaskWoken is now set to pdTRUE then a context switch
+    should be performed to ensure the interrupt returns directly to the highest
+    priority task.  The macro used for this purpose is dependent on the port in
+    use and may be called portEND_SWITCHING_ISR(). */
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+ 
 }
 
 static void vCalcTask(void *pvParameters) {
@@ -57,9 +78,28 @@ static void vUSTask(void *pvParameters) {
 
         //Serial.println(dist);
         //Serial.print("D="); Serial.print(d);
-        vTaskDelay(40); //!!! so far should be enough
-        
-        Serial.print("D = "); Serial.print(di), Serial.print("  cm = "); Serial.println(di/58);
+        //vTaskDelay(40); //!!! so far should be enough
+
+        /* At this point xTaskToNotify should be NULL as no transmission
+    is in progress.  A mutex can be used to guard access to the
+    peripheral if necessary. */
+    configASSERT( xTaskToNotify == NULL );
+
+    /* Store the handle of the calling task. */
+    xTaskToNotify = xTaskGetCurrentTaskHandle();
+
+     // exit_critical here ???
+
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 40 ) );
+
+        if( ulNotificationValue == 1 ) {
+          Serial.print("D = "); Serial.print(di), Serial.print("  cm = "); Serial.println(di/58);
+        }
+        else
+        {
+          Serial.print("Timeout in "); Serial.println( pdMS_TO_TICKS( 30 ) );
+        }
+             
     }
 }
 
