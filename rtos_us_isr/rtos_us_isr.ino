@@ -23,10 +23,11 @@ static void intr() {
     
     /* At this point xTaskToNotify should not be NULL as a transmission was
     in progress. */
-    configASSERT( xTaskToNotify != NULL );
+    //configASSERT( xTaskToNotify != NULL );
 
     /* Notify the task that the transmission is complete. */
-    vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
+    if(xTaskToNotify != NULL )
+      vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
 
     /* There are no transmissions in progress, so no tasks to notify. */
     xTaskToNotify = NULL;
@@ -64,6 +65,10 @@ static void vLEDFlashTask(void *pvParameters) {
 static void vUSTask(void *pvParameters) {
     for (;;) {
         vTaskDelay(1000);
+
+        Serial.println("Test...");
+        vTaskDelay(500);
+        
         di=0;
         taskENTER_CRITICAL();
         digitalWrite(US_OUT_PIN, LOW);
@@ -83,7 +88,7 @@ static void vUSTask(void *pvParameters) {
         /* At this point xTaskToNotify should be NULL as no transmission
     is in progress.  A mutex can be used to guard access to the
     peripheral if necessary. */
-    configASSERT( xTaskToNotify == NULL );
+    //configASSERT( xTaskToNotify == NULL );
 
     /* Store the handle of the calling task. */
     xTaskToNotify = xTaskGetCurrentTaskHandle();
@@ -97,7 +102,8 @@ static void vUSTask(void *pvParameters) {
         }
         else
         {
-          Serial.print("Timeout in "); Serial.println( pdMS_TO_TICKS( 30 ) );
+           xTaskToNotify = NULL;
+          Serial.print("Timeout in "); Serial.println( pdMS_TO_TICKS( 40 ) );
         }
              
     }
@@ -130,7 +136,7 @@ void setup() {
                 "Task3",
                 configMINIMAL_STACK_SIZE,
                 NULL,
-                tskIDLE_PRIORITY + 2,
+                tskIDLE_PRIORITY + 3,
                 NULL);                        
     vTaskStartScheduler();
 }
