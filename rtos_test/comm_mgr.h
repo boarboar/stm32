@@ -15,6 +15,7 @@ class CommManager {
     const char *GetBuffer();
     const char *GetDbgBuffer();
     boolean ProcessCommand();    
+    void Respond(uint8_t code, uint8_t vcnt=0, const char* msg=NULL);
     void vAddAlarm(uint8_t level, uint8_t module, uint8_t code, int16_t p0=0, int16_t p1=0, int16_t p2=0, int16_t p3=0);
     
     enum Modules { CM_MODULE_SYS=1, CM_MODULE_IMU=2, CM_MODULE_CTL=3 };
@@ -35,7 +36,7 @@ class CommManager {
     uint8_t CRC();
     int16_t ReadInt() ;        
     char buf[CM_BUF_SIZE];
-    char msgdbg[CM_BUF_SIZE];
+    char msgdbg[CM_BUF_SIZE*2];
     uint8_t bytes;
     uint8_t pos;
     uint8_t verb;

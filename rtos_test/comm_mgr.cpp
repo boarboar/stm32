@@ -85,8 +85,9 @@ boolean CommManager::ProcessCommand()
     while(isspace(buf[pos])) pos++;
     uint8_t mcrc=(uint8_t)ReadInt();    
     if(crc!=mcrc) {
-      Serial3.println("R -1");
-      strcpy(msgdbg, "CRC FAIL");
+      //Serial3.println("R -1");
+      Respond(-2, 0, "CRC FAIL");
+      //strcpy(msgdbg, "CRC FAIL");
       return false;    
     } else strcpy(msgdbg, "% ");
   }
@@ -105,8 +106,9 @@ boolean CommManager::ProcessCommand()
       strcat(msgdbg, "S");
       break;
     default:  
-      strcat(msgdbg, "BAD CMD");
-      Serial3.println("R -1");
+      //strcat(msgdbg, "BAD CMD");
+      //Serial3.println("R -1");
+      Respond(-2, 0, "BAD CMD");
       return false;
   }
 
@@ -115,8 +117,9 @@ boolean CommManager::ProcessCommand()
   pos=1;
   reg=ReadInt();
   if(reg==0) {    
-    Serial3.println("R -2");      
-    strcat(msgdbg, " BAD REG");    
+    //Serial3.println("R -2");      
+    //strcat(msgdbg, " BAD REG");    
+    Respond(-2, 0, "BAD REG");    
     return false;
   }
   
@@ -187,6 +190,7 @@ boolean CommManager::ProcessCommand()
       default:;
         vcnt=0;
     }
+    /*
     if(!vcnt) strcpy(buf, "R -7");
     else 
     {
@@ -210,6 +214,9 @@ boolean CommManager::ProcessCommand()
     Serial3.println(buf);
     strcat(msgdbg, "->");
     strcat(msgdbg, buf);
+    */
+    if(!vcnt) Respond(-7, 0, "BAD REG");    
+    else Respond(0, vcnt);    
     return true;
   }
 
@@ -217,7 +224,8 @@ boolean CommManager::ProcessCommand()
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
 
   if(!buf[pos]) {
-    Serial3.println("R -3");
+    //Serial3.println("R -3");
+    Respond(-3, 0, "SYN");
     return false;
   }
  
@@ -228,7 +236,8 @@ boolean CommManager::ProcessCommand()
     while(1) { 
         while(isspace(buf[pos])) pos++;     
         if(!buf[pos]) {
-          Serial3.println("R -4");
+          //Serial3.println("R -4");
+          Respond(-4, 0, "SYN");
           return false;
         }
         if(buf[pos]==']') break;        
@@ -236,7 +245,8 @@ boolean CommManager::ProcessCommand()
         vcnt++;
         if(vcnt>CM_NVAL) {
           // too many vals
-          Serial3.println("R -5");
+          //Serial3.println("R -5");
+          Respond(-5, 0, "SYN");
           return false;
         }        
         while(isspace(buf[pos])) pos++;     
@@ -282,13 +292,49 @@ boolean CommManager::ProcessCommand()
     default:;        
   }
 
-  
-  //Serial3.println("R 0");
+ /*
   strcpy(buf, "R ");
   itoa_cat(rc, buf);
   Serial3.println(buf);       
-  
+  */
+
+  Respond(rc);
+    
   return true;
+}
+
+
+void CommManager::Respond(uint8_t rc, uint8_t vcnt, const char* msg) {
+  uint8_t crc;
+  strcpy(buf, "R ");
+  itoa_cat(rc, buf);
+  if(vcnt) {
+      if(vcnt==1) 
+      {
+        strcat(buf, ",");
+        itoa_cat(val[0], buf);
+        strcat(buf, "%");
+      } else 
+      {
+        strcat(buf, ",[");
+        for(uint8_t i=0; i<vcnt; i++) {
+          itoa_cat(val[i], buf);
+          if(i<vcnt-1) strcat(buf, ",");
+        }
+        strcat(buf, "]%");
+      }    
+      crc=CRC();
+      itoa_cat(crc, buf);
+    }
+  Serial3.println(buf);
+  if(msg) {
+    strcat(msgdbg, " - ");
+    strcat(msgdbg, msg);
+  } 
+  else {
+    strcat(msgdbg, "->");
+    strcat(msgdbg, buf);    
+  }
 }
 
 int16_t CommManager::ReadInt() {

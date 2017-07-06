@@ -87,7 +87,8 @@ static void vLazyTask(void *pvParameters) {
     uint8_t needReset=0;
     xLogger.vAddLogMsg("Lazy Task started.");
     for (;;) {       
-        vTaskDelay(2000);                
+        vTaskDelay(2000);  
+        yaw=0.f;              
         if(MpuDrv::Mpu.Acquire()) {
           needReset=MpuDrv::Mpu.isNeedReset();
           MpuDrv::Mpu.copyAlarms();     

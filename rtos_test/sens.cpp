@@ -17,6 +17,40 @@
 
 extern ComLogger xLogger;
 
+static Sensor *sensor_instance=NULL;  
+
+static void echoInterrupt_1() {
+  if(sensor_instance) sensor_instance->echoInterrupt(0); 
+}
+
+static void echoInterrupt_2() {
+  if(sensor_instance) sensor_instance->echoInterrupt(1); 
+}
+
+void Sensor::echoInterrupt(uint16_t i) {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  //static uint32_t t0=0;
+  static uint16_t v;
+  v=digitalRead(this->sens_in_pin[i]);
+  if(v==HIGH) {
+    //t0=micros();
+    //di=0;
+    this->t0[i]=micros();
+    this->di[i]=0;
+  } else {
+    //di=micros()-t0;
+    this->di[i]=micros()-this->t0[i];
+    /* Notify the task that the transmission is complete. */
+    if(xTaskToNotify != NULL )
+      vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
+
+    /* There are no transmissions in progress, so no tasks to notify. */
+    xTaskToNotify = NULL;
+  }
+
+}
+
 void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens_in_pin_1, int sens_out_pin_1) {
     uint8_t i;
     this->sens_in_pin[0]=sens_in_pin_0;
@@ -29,11 +63,16 @@ void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens
     for(i=0; i<2; i++) {
       pinMode(sens_out_pin[i], OUTPUT);           
       pinMode(sens_in_pin[i], INPUT); 
+      t0[i]=0;
     }
     for(i=0; i<M_SENS_N; i++) 
       value[i]=-2;
     sservo_pos=0; //90
     sservo_step=1; 
+    sensor_instance = this;
+    xTaskToNotify = NULL;
+    attachInterrupt(sens_in_pin[0], echoInterrupt_1, CHANGE);
+    attachInterrupt(sens_in_pin[1], echoInterrupt_2, CHANGE);    
     running = false;
     Serial.println("Sensor OK");
 }
@@ -93,25 +132,41 @@ void Sensor::DoCycle() {
     vTaskDelay(200);
     for(uint16_t sens_step=0; sens_step<2; sens_step++) {  
       int8_t current_sens=-sservo_pos+SERVO_NSTEPS+sens_step*(SERVO_NSTEPS*2+1); 
-      int16_t pin_in=sens_in_pin[sens_step];
+      //int16_t pin_in=sens_in_pin[sens_step];
       int16_t pin_out=sens_out_pin[sens_step];
+      xTaskToNotify = xTaskGetCurrentTaskHandle();      
       taskENTER_CRITICAL();
       digitalWrite(pin_out, LOW);
       delayMicroseconds(2);
       digitalWrite(pin_out, HIGH);
       delayMicroseconds(10);
       digitalWrite(pin_out, LOW);
-      //taskEXIT_CRITICAL();
-      uint32_t d=pulseIn(pin_in, HIGH, 30000);
       taskEXIT_CRITICAL();
-      vTaskDelay(1);
+      uint32_t d=0;
+      //uint32_t d=pulseIn(pin_in, HIGH, 30000);
+      //taskEXIT_CRITICAL();
+      //vTaskDelay(1);
+
+      uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 40 ) );
+
+      if( ulNotificationValue == 1 ) {
+          d=di[sens_step];
+        }
+      else
+        {
+           xTaskToNotify = NULL;
+           d=0;    
+        }
+
+            
       if(Acquire()) 
       {
         if(d>0) value[current_sens]=(int16_t)(d/USENS_DIVISOR+USENS_BASE);
         else value[current_sens] = -2;
         Release();  
       }
-      vTaskDelay(50);
+      //vTaskDelay(50);
+      vTaskDelay(1);
     }
 }
 

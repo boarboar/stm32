@@ -13,14 +13,17 @@ class Sensor {
     void Get(int16_t *v, int16_t n);
     bool Acquire();
     void Release();
+    void echoInterrupt(uint16_t i);
   protected: 
     int16_t sens_in_pin[2];
     int16_t sens_out_pin[2];
+    uint32_t t0[2], di[2];
     int16_t value[M_SENS_N];
     int8_t sservo_pos;
     int8_t sservo_step;
     Servo xServo;
     xSemaphoreHandle xSensFree;
+    TaskHandle_t xTaskToNotify;
     bool running;
 };
 
