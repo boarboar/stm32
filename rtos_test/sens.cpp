@@ -14,16 +14,17 @@
 
 #define USENS_DIVISOR 58
 #define USENS_BASE    0
+#define PING_OVERHEAD 5
 
 extern ComLogger xLogger;
 
 static Sensor *sensor_instance=NULL;  
 
-static void echoInterrupt_1() {
+static void echoInterrupt_0() {
   if(sensor_instance) sensor_instance->echoInterrupt(0); 
 }
 
-static void echoInterrupt_2() {
+static void echoInterrupt_1() {
   if(sensor_instance) sensor_instance->echoInterrupt(1); 
 }
 
@@ -33,16 +34,16 @@ void Sensor::echoInterrupt(uint16_t i) {
   //static uint32_t t0=0;
   static uint16_t v;
   v=digitalRead(this->sens_in_pin[i]);
-  if(v==HIGH) {
+  if(v==HIGH) { //raise = start echo
     //t0=micros();
     //di=0;
     this->t0[i]=micros();
     this->di[i]=0;
-  } else {
+  } else { // FALL = stop echo
     //di=micros()-t0;
-    this->di[i]=micros()-this->t0[i];
+    this->di[i]=micros()-this->t0[i]-PING_OVERHEAD;
     /* Notify the task that the transmission is complete. */
-    if(xTaskToNotify != NULL )
+    if(xTaskToNotify != NULL && wait_sens==i)
       vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
 
     /* There are no transmissions in progress, so no tasks to notify. */
@@ -61,6 +62,7 @@ void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens
     xServo.attach(servo_pin);
     xServo.write(90-SERVO_ZERO_SHIFT);
     for(i=0; i<2; i++) {
+      digitalWrite(sens_in_pin[i], LOW);
       pinMode(sens_out_pin[i], OUTPUT);           
       pinMode(sens_in_pin[i], INPUT); 
       t0[i]=0;
@@ -71,8 +73,9 @@ void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens
     sservo_step=1; 
     sensor_instance = this;
     xTaskToNotify = NULL;
-    attachInterrupt(sens_in_pin[0], echoInterrupt_1, CHANGE);
-    attachInterrupt(sens_in_pin[1], echoInterrupt_2, CHANGE);    
+    wait_sens=100;
+    attachInterrupt(sens_in_pin[0], echoInterrupt_0, CHANGE);
+    attachInterrupt(sens_in_pin[1], echoInterrupt_1, CHANGE);    
     running = false;
     Serial.println("Sensor OK");
 }
@@ -132,8 +135,10 @@ void Sensor::DoCycle() {
     vTaskDelay(200);
     for(uint16_t sens_step=0; sens_step<2; sens_step++) {  
       int8_t current_sens=-sservo_pos+SERVO_NSTEPS+sens_step*(SERVO_NSTEPS*2+1); 
-      //int16_t pin_in=sens_in_pin[sens_step];
+      int16_t pin_in=sens_in_pin[sens_step];
       int16_t pin_out=sens_out_pin[sens_step];
+      di[sens_step]=0;
+      wait_sens=sens_step;
       xTaskToNotify = xTaskGetCurrentTaskHandle();      
       taskENTER_CRITICAL();
       digitalWrite(pin_out, LOW);
@@ -147,6 +152,12 @@ void Sensor::DoCycle() {
       //taskEXIT_CRITICAL();
       //vTaskDelay(1);
 
+      if(digitalRead(pin_in)==HIGH) {
+        // not completed
+        xLogger.vAddLogMsg("SENC UNCOMPL=="); 
+      } else {
+        
+      
       uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 40 ) );
 
       if( ulNotificationValue == 1 ) {
@@ -158,6 +169,7 @@ void Sensor::DoCycle() {
            d=0;    
         }
 
+      }
             
       if(Acquire()) 
       {

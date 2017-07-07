@@ -21,6 +21,7 @@ class Sensor {
     int16_t value[M_SENS_N];
     int8_t sservo_pos;
     int8_t sservo_step;
+    uint8_t wait_sens;
     Servo xServo;
     xSemaphoreHandle xSensFree;
     TaskHandle_t xTaskToNotify;

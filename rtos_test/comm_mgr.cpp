@@ -85,9 +85,7 @@ boolean CommManager::ProcessCommand()
     while(isspace(buf[pos])) pos++;
     uint8_t mcrc=(uint8_t)ReadInt();    
     if(crc!=mcrc) {
-      //Serial3.println("R -1");
-      Respond(-2, 0, "CRC FAIL");
-      //strcpy(msgdbg, "CRC FAIL");
+      Respond(CM_RC_FAIL_CRC, 0, "CRC FAIL");
       return false;    
     } else strcpy(msgdbg, "% ");
   }
@@ -106,9 +104,7 @@ boolean CommManager::ProcessCommand()
       strcat(msgdbg, "S");
       break;
     default:  
-      //strcat(msgdbg, "BAD CMD");
-      //Serial3.println("R -1");
-      Respond(-2, 0, "BAD CMD");
+      Respond(CM_RC_FAIL_BADCMD, 0, "BAD CMD");
       return false;
   }
 
@@ -117,9 +113,7 @@ boolean CommManager::ProcessCommand()
   pos=1;
   reg=ReadInt();
   if(reg==0) {    
-    //Serial3.println("R -2");      
-    //strcat(msgdbg, " BAD REG");    
-    Respond(-2, 0, "BAD REG");    
+    Respond(CM_RC_FAIL_BADREG, 0, "BAD REG");    
     return false;
   }
   
@@ -190,33 +184,8 @@ boolean CommManager::ProcessCommand()
       default:;
         vcnt=0;
     }
-    /*
-    if(!vcnt) strcpy(buf, "R -7");
-    else 
-    {
-      if(vcnt==1) 
-      {
-        strcpy(buf, "R 0,");
-        itoa_cat(val[0], buf);
-        strcat(buf, "%");
-      } else 
-      {
-        strcpy(buf, "R 0,[");
-        for(uint8_t i=0; i<vcnt; i++) {
-          itoa_cat(val[i], buf);
-          if(i<vcnt-1) strcat(buf, ",");
-        }
-        strcat(buf, "]%");
-      }    
-      crc=CRC();
-      itoa_cat(crc, buf);
-    }
-    Serial3.println(buf);
-    strcat(msgdbg, "->");
-    strcat(msgdbg, buf);
-    */
-    if(!vcnt) Respond(-7, 0, "BAD REG");    
-    else Respond(0, vcnt);    
+    if(!vcnt) Respond(CM_RC_FAIL_BADREG, 0, "BAD REG");    
+    else Respond(CM_RC_OK, vcnt);    
     return true;
   }
 
@@ -224,8 +193,7 @@ boolean CommManager::ProcessCommand()
   while(isspace(buf[pos]) || buf[pos]==',' ) pos++;     
 
   if(!buf[pos]) {
-    //Serial3.println("R -3");
-    Respond(-3, 0, "SYN");
+    Respond(CM_RC_FAIL_BADSYN, 0, "SYN");
     return false;
   }
  
@@ -236,8 +204,7 @@ boolean CommManager::ProcessCommand()
     while(1) { 
         while(isspace(buf[pos])) pos++;     
         if(!buf[pos]) {
-          //Serial3.println("R -4");
-          Respond(-4, 0, "SYN");
+          Respond(CM_RC_FAIL_BADSYN, 0, "SYN");
           return false;
         }
         if(buf[pos]==']') break;        
@@ -245,8 +212,7 @@ boolean CommManager::ProcessCommand()
         vcnt++;
         if(vcnt>CM_NVAL) {
           // too many vals
-          //Serial3.println("R -5");
-          Respond(-5, 0, "SYN");
+          Respond( CM_RC_FAIL_TOOMANYVALS, 0, "TOOMANY");
           return false;
         }        
         while(isspace(buf[pos])) pos++;     
@@ -292,14 +258,7 @@ boolean CommManager::ProcessCommand()
     default:;        
   }
 
- /*
-  strcpy(buf, "R ");
-  itoa_cat(rc, buf);
-  Serial3.println(buf);       
-  */
-
-  Respond(rc);
-    
+  Respond(rc);   
   return true;
 }
 
