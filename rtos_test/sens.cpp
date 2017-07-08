@@ -29,6 +29,9 @@ static void echoInterrupt_1() {
 }
 
 void Sensor::echoInterrupt(uint16_t i) {
+
+  if(xTaskToNotify == NULL || wait_sens!=i) return;
+  
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
   //static uint32_t t0=0;
@@ -39,17 +42,21 @@ void Sensor::echoInterrupt(uint16_t i) {
     //di=0;
     this->t0[i]=micros();
     this->di[i]=0;
+    this->sens_state[i]=1;
   } else { // FALL = stop echo
     //di=micros()-t0;
+    if(this->sens_state[i]==1) {
+    this->sens_state[i]=2;
     this->di[i]=micros()-this->t0[i]-PING_OVERHEAD;
     /* Notify the task that the transmission is complete. */
-    if(xTaskToNotify != NULL && wait_sens==i)
+    //if(xTaskToNotify != NULL && wait_sens==i)
       vTaskNotifyGiveFromISR( xTaskToNotify, &xHigherPriorityTaskWoken );
 
     /* There are no transmissions in progress, so no tasks to notify. */
     xTaskToNotify = NULL;
+    }
   }
-
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens_in_pin_1, int sens_out_pin_1) {
@@ -66,6 +73,7 @@ void Sensor::Init(int servo_pin, int sens_in_pin_0, int sens_out_pin_0, int sens
       pinMode(sens_out_pin[i], OUTPUT);           
       pinMode(sens_in_pin[i], INPUT); 
       t0[i]=0;
+      sens_state[i]=0;
     }
     for(i=0; i<M_SENS_N; i++) 
       value[i]=-2;
@@ -138,6 +146,7 @@ void Sensor::DoCycle() {
       int16_t pin_in=sens_in_pin[sens_step];
       int16_t pin_out=sens_out_pin[sens_step];
       di[sens_step]=0;
+      sens_state[sens_step]=0;
       wait_sens=sens_step;
       xTaskToNotify = xTaskGetCurrentTaskHandle();      
       taskENTER_CRITICAL();
@@ -154,21 +163,21 @@ void Sensor::DoCycle() {
 
       if(digitalRead(pin_in)==HIGH) {
         // not completed
-        xLogger.vAddLogMsg("SENC UNCOMPL=="); 
+        xLogger.vAddLogMsg("SENC UNC==", sens_step); 
       } else {
         
       
       uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 40 ) );
 
-      if( ulNotificationValue == 1 ) {
+      if( ulNotificationValue == 1 && sens_state[sens_step]==2) {
           d=di[sens_step];
         }
       else
         {
-           xTaskToNotify = NULL;
+           //xTaskToNotify = NULL;
            d=0;    
         }
-
+      xTaskToNotify = NULL;
       }
             
       if(Acquire()) 

@@ -18,6 +18,7 @@ class Sensor {
     int16_t sens_in_pin[2];
     int16_t sens_out_pin[2];
     uint32_t t0[2], di[2];
+    uint8_t sens_state[2];
     int16_t value[M_SENS_N];
     int8_t sservo_pos;
     int8_t sservo_step;
