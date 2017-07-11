@@ -15,6 +15,7 @@
 #define USENS_DIVISOR 58
 #define USENS_BASE    0
 #define PING_OVERHEAD 5
+#define PING_WAIT_MS  40 
 
 extern ComLogger xLogger;
 
@@ -51,6 +52,7 @@ void Sensor::echoInterrupt(uint16_t i) {
       /* There are no transmissions in progress, so no tasks to notify. */
       //xTaskToNotify = NULL;
     }
+    xTaskToNotify = NULL;
   }
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
@@ -161,8 +163,8 @@ void Sensor::DoCycle() {
         // not completed
         xLogger.vAddLogMsg("SENC UNC==", sens_step); 
       } else {             
-        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( 40 ) );
-        if( ulNotificationValue == 1 && sens_state[sens_step]==2) 
+        uint32_t ulNotificationValue = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS( PING_WAIT_MS ) );
+        if( ulNotificationValue == 1 && sens_state[sens_step]==2 && di[sens_step]<1000L*PING_WAIT_MS) 
             d=di[sens_step];
         else d=0;              
       }
