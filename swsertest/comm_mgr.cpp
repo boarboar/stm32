@@ -37,7 +37,7 @@ int CommManager::Get(uint16_t reg) {
   if(reg==0) return -7;
   strcpy(snd_buf, "G ");
   itoa_cat(reg, snd_buf);
-  return CommandRetr(NULL);  
+  return CommandRetr(snd_buf);  
 }
 
 int CommManager::Set(uint16_t reg, int16_t *va, uint16_t nval) 
@@ -48,14 +48,14 @@ int CommManager::Set(uint16_t reg, int16_t *va, uint16_t nval)
   strcat(snd_buf, ",");
   if(nval==1) itoa_cat(*va, snd_buf);
   else {
-    strcat(buf, "[");
+    strcat(snd_buf, "[");
     for(uint8_t i=0; i<nval; i++) {
       itoa_cat(va[i], snd_buf);
       if(i<nval-1) strcat(snd_buf, ",");
     }
     strcat(snd_buf, "]");
   }
-  return CommandRetr(NULL);  
+  return CommandRetr(snd_buf);  
 }
     
 int CommManager::CommandRetr(char *cmd, uint16_t nretr)
@@ -70,13 +70,13 @@ int CommManager::CommandRetr(char *cmd, uint16_t nretr)
     
 int CommManager::Command(char *cmd)
 {  
-  if(NULL!=cmd) strcpy(snd_buf, cmd);
-  strcat(snd_buf, "%");
-  itoa_cat(CRC(), snd_buf);
+  if(NULL!=cmd) strcpy(buf, cmd);
+  strcat(buf, "%");
+  itoa_cat(CRC(), buf);
   Serial.print(">");
-  Serial.println(snd_buf);
+  Serial.println(buf);
   while (swSer.available() > 0)  swSer.read();
-  swSer.println(snd_buf);
+  swSer.println(buf);
   long t=millis();
   boolean res=false;
   resp_val=-100;
