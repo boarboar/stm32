@@ -36,7 +36,7 @@ void doCmd() {
           Serial.println("RESET");
           reg=100;
           nvals=1;
-          vals[0]=100;
+          vals[0]=2;
           break;
         case 'd' :
         case 'D' : // drive
@@ -84,10 +84,15 @@ void doCmd() {
           doSet=false;          
           break;   
         case 'a' :  
-          Serial.println("GET");
+          Serial.println("GET ENC");
           reg=10;
           doSet=false;          
           break;    
+        case 'a' :  
+          Serial.println("GET NSENS");
+          reg=101;
+          doSet=false;          
+          break;      
         case '@':
           checkalr=!checkalr;
           Serial.print("ALR ");  
