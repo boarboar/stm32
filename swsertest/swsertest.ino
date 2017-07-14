@@ -88,7 +88,7 @@ void doCmd() {
           reg=10;
           doSet=false;          
           break;    
-        case 'a' :  
+        case 'n' :  
           Serial.println("GET NSENS");
           reg=101;
           doSet=false;          
