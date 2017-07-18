@@ -5,7 +5,7 @@
 CommManager cmgr;
 boolean checkalr=false;
 
-void checkAlarm() {
+void checkAlarm() {  
   while(cmgr.Get(9)==0) { // alarm
     int n=cmgr.GetResultCnt();
     if(n) {
@@ -18,7 +18,7 @@ void checkAlarm() {
       }
       Serial.print(" in ");
       Serial.println(cmgr.GetLastTimeMs());
-    }
+    } else break; // no more alarms
   }
 }
 
@@ -88,7 +88,7 @@ void doCmd() {
           reg=10;
           doSet=false;          
           break;    
-        case 'a' :  
+        case 'n' :  
           Serial.println("GET NSENS");
           reg=101;
           doSet=false;          
