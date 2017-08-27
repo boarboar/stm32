@@ -45,6 +45,13 @@ void doCmd() {
           nvals=2;
           vals[0]=vals[1]=50;
           break;  
+        case 'b' :
+        case 'B' : // drive back
+          Serial.println("DRIVE BACK");
+          reg=5;
+          nvals=2;
+          vals[0]=vals[1]=-50;
+          break;    
         case 'l' :
         case 'L' : // drive
           Serial.println("DRIVE LEFT");
